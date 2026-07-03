@@ -159,6 +159,45 @@ public class WalletService {
     }
 
     @Transactional
+    public BigDecimal debitForTicketUsingRewardCredits(Long userId, BigDecimal ticketPrice,
+                                                       BigDecimal requestedCredit, Long auctionId) {
+        Wallet wallet = getWalletByUserId(userId);
+        BigDecimal requested = requestedCredit == null ? BigDecimal.ZERO : requestedCredit;
+        if (requested.compareTo(BigDecimal.ZERO) <= 0) {
+            debitForTicket(userId, ticketPrice, auctionId);
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal rewardCreditApplied = requested.min(wallet.getRewardCredits()).min(ticketPrice);
+        BigDecimal walletAmount = ticketPrice.subtract(rewardCreditApplied);
+
+        if (rewardCreditApplied.compareTo(BigDecimal.ZERO) == 0) {
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    "No reward credits are available for this ticket purchase.");
+        }
+        if (wallet.getBalance().compareTo(walletAmount) < 0) {
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    "Insufficient wallet balance after applying available reward credits for this ticket purchase.");
+        }
+
+        wallet.setRewardCredits(wallet.getRewardCredits().subtract(rewardCreditApplied));
+        wallet.setBalance(wallet.getBalance().subtract(walletAmount));
+        walletRepository.save(wallet);
+
+        WalletTransaction tx = WalletTransaction.builder()
+                .wallet(wallet)
+                .type(TransactionType.DEBIT)
+                .reason(TransactionReason.TICKET_PURCHASE)
+                .amount(ticketPrice)
+                .auctionId(auctionId)
+                .note("Reward credits applied: " + rewardCreditApplied.toPlainString())
+                .build();
+        transactionRepository.save(tx);
+
+        return rewardCreditApplied;
+    }
+
+    @Transactional
     public void adminAdjustCredit(Long userId, BigDecimal amount, String note) {
         creditWallet(userId, amount, TransactionReason.ADMIN_ADJUSTMENT, note, null, null);
     }

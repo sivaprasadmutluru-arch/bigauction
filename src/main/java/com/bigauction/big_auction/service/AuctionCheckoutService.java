@@ -5,7 +5,6 @@ import com.bigauction.big_auction.entity.Auction;
 import com.bigauction.big_auction.entity.Order;
 import com.bigauction.big_auction.enums.AuctionStatus;
 import com.bigauction.big_auction.enums.OrderType;
-import com.bigauction.big_auction.enums.TransactionReason;
 import com.bigauction.big_auction.exception.AppException;
 import com.bigauction.big_auction.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +19,11 @@ import java.math.BigDecimal;
 public class AuctionCheckoutService {
 
     private final AuctionService auctionService;
-    private final WalletService walletService;
     private final OrderRepository orderRepository;
 
     /**
      * Called by the auction winner to complete their purchase.
-     * The winner pays their winning bid amount, with optional wallet credit applied.
+     * The winner pays their winning bid amount. Reward credits are not valid for winning item payments.
      */
     @Transactional
     public OrderResponse checkout(Long auctionId, Long userId, BigDecimal creditToApply,
@@ -46,13 +44,12 @@ public class AuctionCheckoutService {
         // Winner pays their winning bid amount
         BigDecimal winningBid = auction.getCurrentHighestBid();
 
-        BigDecimal creditApplied = BigDecimal.ZERO;
         if (creditToApply != null && creditToApply.compareTo(BigDecimal.ZERO) > 0) {
-            creditApplied = walletService.applyCredit(userId, creditToApply,
-                    TransactionReason.AUCTION_WIN_PURCHASE, auctionId);
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    "Reward credits can only be used for future auction ticket purchases, not winning item payments.");
         }
 
-        BigDecimal totalAmount = winningBid.subtract(creditApplied).max(BigDecimal.ZERO);
+        BigDecimal totalAmount = winningBid;
 
         Order order = Order.builder()
                 .user(auction.getWinner())
@@ -60,7 +57,7 @@ public class AuctionCheckoutService {
                 .auction(auction)
                 .type(OrderType.AUCTION_WIN)
                 .totalAmount(totalAmount)
-                .creditApplied(creditApplied)
+                .creditApplied(BigDecimal.ZERO)
                 .shippingName(shippingName)
                 .shippingPhone(shippingPhone)
                 .shippingAddress(shippingAddress)

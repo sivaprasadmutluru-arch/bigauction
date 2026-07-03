@@ -6,7 +6,6 @@ import com.bigauction.big_auction.entity.Order;
 import com.bigauction.big_auction.entity.Product;
 import com.bigauction.big_auction.entity.User;
 import com.bigauction.big_auction.enums.OrderType;
-import com.bigauction.big_auction.enums.TransactionReason;
 import com.bigauction.big_auction.exception.AppException;
 import com.bigauction.big_auction.repository.AuctionRepository;
 import com.bigauction.big_auction.repository.OrderRepository;
@@ -28,12 +27,11 @@ public class BuyNowService {
     private final OrderRepository orderRepository;
     private final ProductService productService;
     private final AuctionService auctionService;
-    private final WalletService walletService;
 
     /**
      * Handles a Buy Now purchase.
      * - Validates the product is available and Buy Now is permitted
-     * - Optionally applies wallet credit
+     * - Rejects reward credits because they are only valid for auction tickets
      * - Creates the order
      * - Closes the auction (if one exists) and distributes credits to ticket holders
      */
@@ -64,14 +62,12 @@ public class BuyNowService {
 
         BigDecimal basePrice = product.getBuyNowPrice();
 
-        // Apply wallet credit if requested
-        BigDecimal creditApplied = BigDecimal.ZERO;
         if (creditToApply != null && creditToApply.compareTo(BigDecimal.ZERO) > 0) {
-            creditApplied = walletService.applyCredit(userId, creditToApply,
-                    TransactionReason.BUY_NOW_PURCHASE, auctionOpt.map(Auction::getId).orElse(null));
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    "Reward credits can only be used for future auction ticket purchases, not Buy Now purchases.");
         }
 
-        BigDecimal totalAmount = basePrice.subtract(creditApplied).max(BigDecimal.ZERO);
+        BigDecimal totalAmount = basePrice;
 
         Order order = Order.builder()
                 .user(buyer)
@@ -79,7 +75,7 @@ public class BuyNowService {
                 .auction(auctionOpt.orElse(null))
                 .type(OrderType.BUY_NOW)
                 .totalAmount(totalAmount)
-                .creditApplied(creditApplied)
+                .creditApplied(BigDecimal.ZERO)
                 .shippingName(shippingName)
                 .shippingPhone(shippingPhone)
                 .shippingAddress(shippingAddress)

@@ -43,13 +43,11 @@ public class BidService {
         if (!ticketService.hasTicket(auctionId, userId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "You must purchase a ticket before bidding");
         }
-        BigDecimal minBid = auction.getBidIncrement() != null && auction.getBidIncrement().compareTo(BigDecimal.ZERO) > 0
-                ? auction.getCurrentHighestBid().add(auction.getBidIncrement())
-                : auction.getCurrentHighestBid().add(BigDecimal.ONE);
+        BigDecimal nextAllowedBid = getNextAllowedBid(auction);
 
-        if (request.getAmount().compareTo(minBid) < 0) {
+        if (request.getAmount().compareTo(nextAllowedBid) != 0) {
             throw new AppException(HttpStatus.BAD_REQUEST,
-                    "Minimum bid is " + currency + " " + minBid.toPlainString());
+                    "Next bid must be " + currency + " " + nextAllowedBid.toPlainString());
         }
         if (auction.getMaxBidAmount() != null
                 && request.getAmount().compareTo(auction.getMaxBidAmount()) > 0) {
@@ -153,6 +151,13 @@ public class BidService {
             // The user who was just outbid by this auto bid is now the candidate for the next round
             currentOutbidUser = previousHighest;
         }
+    }
+
+    BigDecimal getNextAllowedBid(Auction auction) {
+        BigDecimal increment = auction.getBidIncrement() != null && auction.getBidIncrement().compareTo(BigDecimal.ZERO) > 0
+                ? auction.getBidIncrement()
+                : BigDecimal.ONE;
+        return auction.getCurrentHighestBid().add(increment);
     }
 
     @Transactional(readOnly = true)

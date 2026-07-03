@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @Service
 @RequiredArgsConstructor
 public class AutoBidService {
@@ -35,19 +37,28 @@ public class AutoBidService {
         if (!ticketService.hasTicket(auctionId, userId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "You must purchase a ticket before enabling auto bid");
         }
-        if (request.getMaxLimit().compareTo(auction.getCurrentHighestBid()) <= 0) {
+        BigDecimal nextAllowedBid = bidService.getNextAllowedBid(auction);
+        BigDecimal auctionIncrement = getAuctionIncrement(auction);
+
+        if (request.getIncrement().compareTo(auctionIncrement) < 0
+                || request.getIncrement().remainder(auctionIncrement).compareTo(BigDecimal.ZERO) != 0) {
             throw new AppException(HttpStatus.BAD_REQUEST,
-                    "Maximum limit must be greater than the current highest bid of "
-                            + auction.getCurrency() + " " + auction.getCurrentHighestBid().toPlainString());
+                    "Auto bid increment must be an AED amount in multiples of "
+                            + auction.getCurrency() + " " + auctionIncrement.toPlainString());
         }
-        if (auction.getMaxBidAmount() != null && request.getMaxLimit().compareTo(auction.getMaxBidAmount()) > 0) {
+        if (request.getMaxLimit().compareTo(nextAllowedBid) < 0) {
             throw new AppException(HttpStatus.BAD_REQUEST,
-                    "Maximum limit cannot exceed the auction cap of "
-                            + auction.getCurrency() + " " + auction.getMaxBidAmount().toPlainString());
+                    "Maximum limit must allow at least the next bid of "
+                            + auction.getCurrency() + " " + nextAllowedBid.toPlainString());
         }
         if (request.getStartingBid() != null) {
             if (request.getStartingBid().compareTo(request.getMaxLimit()) > 0) {
                 throw new AppException(HttpStatus.BAD_REQUEST, "Starting bid cannot exceed the maximum limit");
+            }
+            if (request.getStartingBid().compareTo(nextAllowedBid) != 0) {
+                throw new AppException(HttpStatus.BAD_REQUEST,
+                        "Starting bid must be the next AED increment of "
+                                + auction.getCurrency() + " " + nextAllowedBid.toPlainString());
             }
         }
 
@@ -100,5 +111,11 @@ public class AutoBidService {
                 .maxLimit(config.getMaxLimit())
                 .enabled(config.isEnabled())
                 .build();
+    }
+
+    private BigDecimal getAuctionIncrement(Auction auction) {
+        return auction.getBidIncrement() != null && auction.getBidIncrement().compareTo(BigDecimal.ZERO) > 0
+                ? auction.getBidIncrement()
+                : BigDecimal.ONE;
     }
 }

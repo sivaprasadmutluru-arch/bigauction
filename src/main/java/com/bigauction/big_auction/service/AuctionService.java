@@ -214,7 +214,8 @@ public class AuctionService {
     }
 
     public boolean isBuyNowCurrentlyAvailable(Auction auction) {
-        if (!auction.isBuyNowEnabled() || auction.getStatus() == AuctionStatus.SOLD) return false;
+        if (!auction.isBuyNowEnabled() || auction.getStatus() != AuctionStatus.PENDING) return false;
+        if (auction.getBuyNowActivationRule() == null) return false;
 
         return switch (auction.getBuyNowActivationRule()) {
             case IMMEDIATE -> true;
