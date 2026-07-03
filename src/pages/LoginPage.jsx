@@ -45,12 +45,12 @@ export default function LoginPage() {
   const location  = useLocation()
   const { user, loading, error } = useSelector(s => s.auth)
 
-  const from = location.state?.from?.pathname || '/'
+  const from = location.state?.from?.pathname
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPw, setShowPw] = useState(false)
 
   useEffect(() => {
-    if (user) navigate(from, { replace: true })
+    if (user) navigate(from && from !== '/' ? from : '/profile', { replace: true })
     return () => dispatch(clearError())
   }, [user])
 

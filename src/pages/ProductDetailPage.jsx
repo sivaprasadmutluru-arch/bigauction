@@ -169,14 +169,9 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
   const imgUrl        = product.imageUrls?.[0] || null
   const isActive      = auction.status === 'ACTIVE'
 
-  // Reward credits from auction-loss transactions
-  const rewardCredits = useMemo(() => {
-    if (!wallet?.transactions) return 0
-    return wallet.transactions
-      .filter(t => t.reason === 'AUCTION_LOSS_CREDIT' && t.type === 'CREDIT')
-      .reduce((sum, t) => sum + Number(t.amount), 0)
-  }, [wallet])
+  const rewardCredits = wallet ? Number(wallet.rewardCredits || 0) : 0
   const canUseCredits = rewardCredits >= ticketPrice
+  const hasPartialCredits = rewardCredits > 0 && rewardCredits < ticketPrice
 
   const fmt2 = n => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -200,7 +195,12 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
     if (payMethod === 'card') { onCardPayment(); return }
     setBusy(true); setError(null)
     try {
-      await dispatch(purchaseTicket(auction.id)).unwrap()
+      await dispatch(purchaseTicket({
+        auctionId: auction.id,
+        payment: payMethod === 'credits'
+          ? { paymentMethod: 'REWARD_CREDITS', creditToApply: ticketPrice }
+          : { paymentMethod: 'WALLET' },
+      })).unwrap()
       setStep(3)
     } catch (e) {
       setError(typeof e === 'string' ? e : e?.message || 'Purchase failed. Please try again.')
@@ -487,7 +487,11 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
                           <svg className="w-3 h-3 text-[#aaa] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4M12 16h.01"/>
                           </svg>
-                          <p className="text-[#999] text-[10px]">Reward Credits can only be used for auction tickets.</p>
+                          <p className="text-[#999] text-[10px]">
+                            {hasPartialCredits
+                              ? 'Partial credit use is not supported. Credits must cover the full ticket price.'
+                              : 'Reward Credits can only be used for auction tickets.'}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -792,7 +796,12 @@ function LiveAuctionPanel({ auction, bids, product }) {
   const onCardPayment = () => { setShowPaymentModal(false); navigate('/checkout', { state: { type: 'ticket', product, auction } }) }
 
   const buyNowPrice = product.buyNowPrice ? Number(product.buyNowPrice) : null
-  const buyNowAvail = !!(buyNowPrice && auction.buyNowAvailable)
+  const isActive  = auction.status === 'ACTIVE'
+  const isSold    = auction.status === 'SOLD'
+  const isClosed  = auction.status === 'CLOSED'
+  const isEnded   = isSold || isClosed
+  const isWinner  = user && auction.winnerId === user.id
+  const buyNowAvail = !!(buyNowPrice && auction.buyNowAvailable && !isActive && !isEnded)
   const onBuyNow    = () => {
     if (!user) { navigate('/login'); return }
     navigate('/checkout', { state: { type: 'buynow', product, auction } })
@@ -825,12 +834,6 @@ function LiveAuctionPanel({ auction, bids, product }) {
       setAutoBidMsg({ type: 'error', text: typeof e === 'string' ? e : e?.message || 'Failed to disable auto bid' })
     } finally { setAutoBidLoading(false) }
   }
-
-  const isActive  = auction.status === 'ACTIVE'
-  const isSold    = auction.status === 'SOLD'
-  const isClosed  = auction.status === 'CLOSED'
-  const isEnded   = isSold || isClosed
-  const isWinner  = user && auction.winnerId === user.id
 
   const onCheckout = () => {
     if (!user) { navigate('/login'); return }
@@ -1140,7 +1143,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
       )}
 
       {/* BUY NOW section */}
-      {isActive && buyNowAvail && (
+      {buyNowAvail && (
         <div className="border border-gold/35 rounded-xl overflow-hidden mb-4">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gold/20 bg-gold/5">
             <div className="flex items-center gap-2">
@@ -1240,9 +1243,9 @@ function LiveAuctionPanel({ auction, bids, product }) {
                   className="w-full bg-white border border-taupe/25 text-charcoal rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-emerald transition-colors"
                 >
                   <option value="">Select increment</option>
-                  <option value={bidIncrement}>AED {bidIncrement.toLocaleString()} (1×)</option>
-                  <option value={bidIncrement * 2}>AED {(bidIncrement * 2).toLocaleString()} (2×)</option>
-                  <option value={bidIncrement * 5}>AED {(bidIncrement * 5).toLocaleString()} (5×)</option>
+                  <option value={bidIncrement}>AED {bidIncrement.toLocaleString()} per auto bid</option>
+                  <option value={bidIncrement * 2}>AED {(bidIncrement * 2).toLocaleString()} per auto bid</option>
+                  <option value={bidIncrement * 5}>AED {(bidIncrement * 5).toLocaleString()} per auto bid</option>
                 </select>
               </div>
 
@@ -1400,7 +1403,7 @@ function PendingAuctionPanel({ auction, product }) {
   const ticketTarget = auction.ticketTarget || 0
   const ticketPct    = ticketTarget > 0 ? Math.min((ticketsSold / ticketTarget) * 100, 100) : 0
   const buyNowPrice  = product.buyNowPrice ? Number(product.buyNowPrice) : null
-  const buyNowAvail  = !!(buyNowPrice && auction.buyNowAvailable)
+  const buyNowAvail  = !!(buyNowPrice && auction.buyNowAvailable && auction.status !== 'ACTIVE')
   const pad = n => String(n).padStart(2, '0')
 
   const countdown = useCountdown(auction.scheduledStartTime)

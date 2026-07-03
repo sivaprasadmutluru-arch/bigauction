@@ -51,13 +51,19 @@ function SectionBanner({ title, subtitle, leftImage, rightImage }) {
       )}
 
       {/* Center text */}
-      <div className="relative z-10 py-8 text-center">
+      <div className="absolute inset-0 pointer-events-none"
+           style={{
+             backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)',
+             backgroundSize: '24px 24px',
+           }} />
+
+      <div className="relative z-10 py-9 text-center px-4">
         <div className="flex items-center justify-center gap-4 mb-2">
           <div className="h-px w-14 bg-gold/50" />
           <p className="text-gold font-bold text-sm tracking-[0.35em] uppercase">{title}</p>
           <div className="h-px w-14 bg-gold/50" />
         </div>
-        <p className="text-ivory/60 text-sm">{subtitle}</p>
+        <p className="font-display text-ivory text-2xl sm:text-3xl font-semibold">{subtitle}</p>
       </div>
     </div>
   )
@@ -97,6 +103,7 @@ function ComingSoonCard({ auction, isFavourite, onToggleFavourite }) {
   const product  = auction.product
   const countdown = useCountdown(auction.scheduledStartTime)
   const image    = product?.imageUrls?.[0] || null
+  const brand    = product?.brand || product?.category?.name || 'Luxury'
   const ticketsSold  = auction.ticketsSold  || 0
   const ticketTarget = auction.ticketTarget || 0
   const ticketPct    = ticketTarget > 0 ? Math.min((ticketsSold / ticketTarget) * 100, 100) : 0
@@ -104,42 +111,68 @@ function ComingSoonCard({ auction, isFavourite, onToggleFavourite }) {
   const maxBid       = auction.reservePrice || auction.estimateHigh
 
   return (
-    <div className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-xl overflow-hidden shadow-luxury hover:shadow-luxury-hover transition-all duration-300 flex flex-col">
+    <div className="flex-shrink-0 w-[330px] sm:w-[390px] bg-white rounded-[22px] overflow-hidden shadow-luxury hover:shadow-luxury-hover transition-all duration-300 flex flex-col border border-gold/20">
 
-      {/* Top bar: countdown + heart */}
-      <div className="flex items-center justify-between bg-emerald px-3 py-2">
-        <div className="flex items-center gap-1.5">
-          <p className="text-ivory/70 text-[10px] font-semibold uppercase tracking-wide">Starts In</p>
-          <p className="text-ivory text-[11px] font-bold font-mono">
-            {pad(countdown.dd)}d : {pad(countdown.hh)}h : {pad(countdown.mm)}m
-          </p>
+      {/* Approved reference stage */}
+      <Link to={`/products/${product?.id}`} className="group block relative h-[300px] bg-[#f7efe4] overflow-hidden flex-shrink-0">
+        <div className="absolute inset-3 rounded-[18px] border border-gold/25 bg-[#fbf4ea] overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_28%,rgba(198,169,114,0.18),transparent_24%),linear-gradient(90deg,rgba(255,255,255,0.9),rgba(255,255,255,0.25)_52%,rgba(255,255,255,0.82))]" />
+
+          <div className="absolute left-5 top-5 z-20 inline-flex items-center gap-2 rounded-lg bg-emerald px-4 py-3 shadow-md">
+            <svg className="h-4 w-4 text-gold" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 8.25h16.5M5.25 5.25h13.5c.828 0 1.5.672 1.5 1.5v12c0 .828-.672 1.5-1.5 1.5H5.25c-.828 0-1.5-.672-1.5-1.5v-12c0-.828.672-1.5 1.5-1.5z" />
+            </svg>
+            <span className="text-ivory text-sm font-bold tracking-wide uppercase">Auctions Starting Soon</span>
+          </div>
+
+          <button
+            onClick={e => { e.preventDefault(); e.stopPropagation(); onToggleFavourite?.(auction.id) }}
+            className={`absolute right-5 top-5 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md border border-gold/20 transition-colors ${isFavourite ? 'text-burgundy' : 'text-gold hover:text-emerald'}`}
+            aria-label="Toggle favourite"
+          >
+            <svg className="w-6 h-6" fill={isFavourite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+
+          <div className="absolute left-7 top-[126px] z-10 max-w-[135px]">
+            <p className="font-display text-[2.05rem] leading-none tracking-[0.26em] uppercase text-gold/95 break-words">
+              {brand}
+            </p>
+          </div>
+
+          <div className="absolute right-5 bottom-0 h-[220px] w-[66%]">
+            {image
+              ? <img src={image} alt={product?.name} className="h-full w-full object-contain object-bottom drop-shadow-xl transition-transform duration-500 group-hover:scale-[1.03]" />
+              : <div className="h-full w-full flex items-center justify-center text-gold/25 text-6xl">◆</div>
+            }
+          </div>
         </div>
-        <button
-          onClick={e => { e.stopPropagation(); onToggleFavourite?.(auction.id) }}
-          className={`transition-colors ${isFavourite ? 'text-burgundy' : 'text-ivory/50 hover:text-ivory'}`}
-          aria-label="Toggle favourite"
-        >
-          <svg className="w-4 h-4" fill={isFavourite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Image */}
-      <Link to={`/products/${product?.id}`} className="block relative h-44 bg-ivory overflow-hidden flex-shrink-0">
-        {image
-          ? <img src={image} alt={product?.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-          : <div className="w-full h-full flex items-center justify-center text-taupe/20 text-4xl">◆</div>
-        }
       </Link>
 
       {/* Body */}
       <div className="p-4 flex flex-col flex-1 gap-3">
         <Link to={`/products/${product?.id}`}>
-          <h3 className="text-charcoal font-semibold text-sm leading-snug line-clamp-2 hover:text-emerald transition-colors">
+          <h3 className="font-display text-charcoal font-semibold text-lg leading-snug line-clamp-2 hover:text-emerald transition-colors">
             {product?.name}
           </h3>
         </Link>
+
+        <div className="flex items-center justify-between rounded-lg border border-taupe/15 bg-ivory px-3 py-2">
+          <p className="text-taupe text-[10px] font-bold uppercase tracking-[0.18em]">Starts In</p>
+          <div className="flex items-center gap-1.5">
+            {[
+              ['D', countdown.dd],
+              ['H', countdown.hh],
+              ['M', countdown.mm],
+            ].map(([unit, value]) => (
+              <span key={unit} className="inline-flex items-baseline gap-0.5 rounded bg-white px-2 py-1 text-charcoal shadow-sm">
+                <strong className="font-mono text-xs">{pad(value)}</strong>
+                <span className="text-[8px] text-taupe">{unit}</span>
+              </span>
+            ))}
+          </div>
+        </div>
 
         {/* Pricing table */}
         <div className="space-y-1.5 text-xs">
@@ -294,18 +327,18 @@ function WinnerCard({ auction }) {
     : '—'
 
   return (
-    <div className="flex-shrink-0 w-[220px] sm:w-[240px] bg-white rounded-xl overflow-hidden shadow-luxury flex gap-0 flex-col">
+    <div className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-lg overflow-hidden shadow-luxury flex gap-0 flex-col border border-gold/15">
       <div className="relative h-40 bg-ivory overflow-hidden flex-shrink-0">
         {image
           ? <img src={image} alt={product?.name} className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center text-taupe/20 text-4xl">◆</div>
         }
         <div className="absolute top-2 left-2 bg-emerald text-ivory text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wide">
-          Sold
+          Auction Result
         </div>
       </div>
       <div className="p-3 space-y-1.5 text-xs">
-        <p className="text-charcoal font-semibold text-sm leading-snug line-clamp-2">{product?.name}</p>
+        <p className="font-display text-charcoal font-semibold text-base leading-snug line-clamp-2">{product?.name}</p>
         <div className="flex justify-between">
           <span className="text-taupe">Winner</span>
           <span className="text-charcoal font-medium">{winnerDisplay}</span>
@@ -411,8 +444,8 @@ export default function HomePage() {
       {pendingAuctions.length > 0 && (
         <section>
           <SectionBanner
-            title="Coming Soon"
-            subtitle="Secure your spot before the auction begins."
+            title="Auctions Starting Soon"
+            subtitle="Secure your spot before the auction begins"
             leftImage={pendingImages[0]}
             rightImage={pendingImages[1]}
           />
@@ -436,7 +469,7 @@ export default function HomePage() {
         <section>
           <SectionBanner
             title="Live Auctions"
-            subtitle="Place your bids and compete in real-time."
+            subtitle="Place your bids and compete in real-time"
             leftImage={liveImages[0]}
             rightImage={liveImages[1]}
           />
@@ -457,17 +490,14 @@ export default function HomePage() {
 
       {/* ── RECENT WINNERS ───────────────────────────────────── */}
       {recentWinners.length > 0 && (
-        <section id="winners" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center mb-8">
-            <p className="text-gold text-xs font-bold tracking-[0.3em] uppercase mb-1">Recent Winners</p>
-            <h2 className="font-display text-charcoal text-3xl font-semibold">Real results. Real excitement.</h2>
-            <div className="mt-3 flex items-center justify-center gap-3">
-              <div className="h-px w-12 bg-gold/30" />
-              <span className="text-gold text-xs">◆</span>
-              <div className="h-px w-12 bg-gold/30" />
-            </div>
-          </div>
-          <div className="overflow-hidden">
+        <section id="winners">
+          <SectionBanner
+            title="Auction Results"
+            subtitle="Real results. Real excitement"
+            leftImage={liveImages[0] || pendingImages[0]}
+            rightImage={liveImages[1] || pendingImages[1]}
+          />
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 py-8 overflow-hidden">
             <Carousel>
               {recentWinners.map(a => (
                 <WinnerCard key={a.id} auction={a} />
@@ -479,12 +509,17 @@ export default function HomePage() {
 
       {/* ── HOW IT WORKS ─────────────────────────────────────── */}
       <section id="how-it-works" className="bg-white border-y border-taupe/10">
+        <SectionBanner
+          title="How Big Auction Works"
+          subtitle="Simple steps to join, bid, and win"
+          leftImage={pendingImages[2] || liveImages[0]}
+          rightImage={liveImages[2] || pendingImages[1]}
+        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
           <div className="flex flex-col lg:flex-row gap-10 items-start">
 
             {/* Steps */}
             <div className="flex-1">
-              <p className="text-charcoal text-sm font-bold uppercase tracking-[0.15em] mb-8">How Big Auction Works</p>
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 sm:gap-0">
                 {HOW_STEPS.map((step, i) => (
                   <div key={step.num} className="flex sm:flex-col items-center sm:items-center flex-1 gap-3 sm:gap-0 sm:text-center">
@@ -501,8 +536,8 @@ export default function HomePage() {
                       </div>
                     )}
                     <div className="sm:mt-3 pb-2">
-                      <p className="text-charcoal text-xs font-bold">{step.num}. {step.title}</p>
-                      <p className="text-taupe text-xs mt-0.5 max-w-[100px] mx-auto leading-snug">{step.text}</p>
+                      <p className="text-charcoal text-sm font-bold">{step.num}. {step.title}</p>
+                      <p className="text-taupe text-xs mt-1 max-w-[130px] mx-auto leading-snug">{step.text}</p>
                     </div>
                   </div>
                 ))}

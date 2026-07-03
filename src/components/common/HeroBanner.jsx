@@ -79,13 +79,15 @@ export default function HeroBanner() {
             </div>
 
             {/* Trust badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 mt-10 pt-8 border-t border-taupe/15">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-10 pt-8 border-t border-taupe/15">
               {TRUST.map(t => (
-                <div key={t.line1} className="flex items-start gap-2.5">
-                  <div className="flex-shrink-0 mt-0.5">{t.icon}</div>
+                <div key={t.line1} className="flex items-center gap-3 rounded-lg bg-white/80 border border-gold/20 px-4 py-3 shadow-sm">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-emerald">
+                    <div className="[&>svg]:w-6 [&>svg]:h-6">{t.icon}</div>
+                  </div>
                   <div>
-                    <p className="text-charcoal text-xs font-semibold leading-snug">{t.line1}</p>
-                    <p className="text-taupe text-xs leading-snug">{t.line2}</p>
+                    <p className="text-charcoal text-sm font-bold leading-snug">{t.line1}</p>
+                    <p className="text-taupe text-xs leading-snug mt-0.5">{t.line2}</p>
                   </div>
                 </div>
               ))}

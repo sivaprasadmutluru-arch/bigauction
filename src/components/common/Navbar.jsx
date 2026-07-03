@@ -49,11 +49,11 @@ export default function Navbar() {
       {({ open }) => (
         <>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
+            <div className="flex items-center justify-between h-20">
 
               {/* Logo */}
-              <Link to="/" className="flex-shrink-0">
-                <img src={logo} alt="Big Auction" className="h-9 w-auto" />
+              <Link to="/" className="flex-shrink-0 py-2">
+                <img src={logo} alt="Big Auction" className="h-14 sm:h-16 w-auto" />
               </Link>
 
               {/* Desktop nav */}
@@ -84,17 +84,6 @@ export default function Navbar() {
 
               {/* Right side */}
               <div className="flex items-center gap-3">
-
-                {/* Language */}
-                <div className="hidden sm:flex items-center gap-1 text-charcoal text-sm font-medium select-none">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253M3 12c0 .778.099 1.533.284 2.253" />
-                  </svg>
-                  <span>EN</span>
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
 
                 {user ? (
                   <>

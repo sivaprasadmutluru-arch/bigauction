@@ -138,13 +138,29 @@ const AUCTION_STATUS_MAP = {
   'Completed':   ['SOLD', 'COMPLETED', 'ENDED', 'CLOSED'],
 }
 
-const LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'ar', label: 'العربية' },
-]
-
 const EMPTY_ADDRESS = { label: '', fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', country: 'UAE', emirate: '', poBox: '', isDefault: false }
 const EMPTY_WISHLIST = { brand: '', itemModel: '', budgetMin: '', budgetMax: '', notes: '', photoUrl: '' }
+
+function DashboardBanner({ eyebrow, title, action }) {
+  return (
+    <div className="relative overflow-hidden bg-emerald px-4 sm:px-7 lg:px-9 xl:px-10 py-4 sm:py-5">
+      <div className="absolute inset-0 pointer-events-none"
+           style={{
+             backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)',
+             backgroundSize: '22px 22px',
+           }} />
+      <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p className="text-gold text-[10px] font-bold uppercase tracking-[0.28em] mb-1">{eyebrow}</p>
+          <h2 className="font-display text-ivory font-semibold leading-tight" style={{ fontSize: 'clamp(1.35rem, 3vw, 2.1rem)' }}>
+            {title}
+          </h2>
+        </div>
+        {action}
+      </div>
+    </div>
+  )
+}
 
 // ── Modals ─────────────────────────────────────────────────────────────────────
 
@@ -466,7 +482,7 @@ export default function ProfilePage() {
   const { items: wishlist, loading: wlLoading } = useSelector(s => s.wishlist)
 
   const [editMode,         setEditMode]         = useState(false)
-  const [form,             setForm]             = useState({ name: '', nickname: '', email: '', phone: '', language: 'en' })
+  const [form,             setForm]             = useState({ name: '', nickname: '', email: '', phone: '' })
   const [saveOk,           setSaveOk]           = useState(false)
   const [tickets,          setTickets]          = useState([])
   const [tLoading,         setTLoading]         = useState(false)
@@ -478,7 +494,7 @@ export default function ProfilePage() {
   const [editWishlistItem,  setEditWishlistItem]  = useState(null)
 
   useEffect(() => {
-    if (user) setForm({ name: user.name || '', nickname: user.nickname || '', email: user.email || '', phone: user.phone || '', language: user.language || 'en' })
+    if (user) setForm({ name: user.name || '', nickname: user.nickname || '', email: user.email || '', phone: user.phone || '' })
     return () => dispatch(clearError())
   }, [user])
 
@@ -501,7 +517,7 @@ export default function ProfilePage() {
     e.preventDefault()
     setSaveOk(false)
     try {
-      await dispatch(updateProfile({ name: form.name, nickname: form.nickname, phone: form.phone, language: form.language })).unwrap()
+      await dispatch(updateProfile({ name: form.name, nickname: form.nickname, phone: form.phone })).unwrap()
       setSaveOk(true)
       setEditMode(false)
     } catch {}
@@ -645,15 +661,6 @@ export default function ProfilePage() {
                   <input type="email" value={form.email} readOnly className={readonlyCls}
                          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>
-                {/* Language */}
-                <div>
-                  <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: 'rgba(242,231,213,0.45)' }}>Language</label>
-                  <select name="language" value={form.language} onChange={onChange}
-                    className={inputCls}
-                    style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                    {LANGUAGES.map(l => <option key={l.code} value={l.code} style={{ color: '#0D0D0D' }}>{l.label}</option>)}
-                  </select>
-                </div>
                 <div className="flex gap-3 pt-0.5">
                   <button type="submit" disabled={loading}
                     className="btn-shimmer text-almost-black text-sm font-bold px-5 py-2.5 rounded-lg disabled:opacity-50"
@@ -729,8 +736,8 @@ export default function ProfilePage() {
                   <span className="scale-75 sm:scale-100">{icon}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-charcoal text-[13px] sm:text-[15px] font-semibold leading-snug truncate">{label}</p>
-                  <p className="text-taupe text-[11px] sm:text-[12px] mt-0.5 leading-snug hidden sm:block">{sub}</p>
+                  <p className="text-charcoal text-[13px] sm:text-[15px] font-semibold leading-snug break-words">{label}</p>
+                  <p className="text-taupe text-[11px] sm:text-[12px] mt-0.5 leading-snug hidden sm:block break-words">{sub}</p>
                 </div>
                 <span className="text-taupe/35 flex-shrink-0 group-hover:translate-x-0.5 transition-transform"><IconArrowRight /></span>
               </div>
@@ -746,14 +753,15 @@ export default function ProfilePage() {
         <div id="my-auctions" className="bg-white rounded-2xl overflow-hidden"
              style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
 
-          <div className="px-4 sm:px-7 lg:px-9 xl:px-10 pt-5 sm:pt-7 lg:pt-8 pb-3 sm:pb-4 flex items-center justify-between">
-            <h2 className="font-display text-charcoal font-semibold" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 2rem)' }}>
-              My Auctions
-            </h2>
-            <Link to="/auctions" className="flex items-center gap-1.5 text-[12px] lg:text-[13px] font-semibold hover:underline transition-opacity hover:opacity-80" style={{ color: '#C6A972' }}>
-              View all <IconArrowRight />
-            </Link>
-          </div>
+          <DashboardBanner
+            eyebrow="My Dashboard"
+            title="My Auctions"
+            action={(
+              <Link to="/auctions" className="inline-flex items-center justify-center gap-1.5 text-[12px] lg:text-[13px] font-bold px-4 py-2 rounded-lg bg-gold text-almost-black hover:opacity-90 transition-opacity">
+                View all <IconArrowRight />
+              </Link>
+            )}
+          />
 
           <div className="px-4 sm:px-7 lg:px-9 xl:px-10 pb-3 sm:pb-4 flex gap-1.5 sm:gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             {AUCTION_TABS.map(t => (
@@ -854,14 +862,22 @@ export default function ProfilePage() {
         <div id="my-requests" className="bg-white rounded-2xl overflow-hidden"
              style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
 
-          <div className="px-4 sm:px-7 lg:px-9 xl:px-10 pt-5 sm:pt-7 lg:pt-8 pb-1 flex items-start justify-between gap-3">
-            <div>
-              <h2 className="font-display text-charcoal font-semibold" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 2rem)' }}>
-                My Requests
-              </h2>
-              <p className="text-taupe text-[11px] sm:text-[12px] lg:text-[13px] mt-0.5">Financial movements appear in Statements</p>
-            </div>
-          </div>
+          <DashboardBanner
+            eyebrow="My Dashboard"
+            title="My Requests"
+            action={(
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => setRequestTab('Support')}
+                  className="inline-flex items-center justify-center gap-1.5 text-[12px] lg:text-[13px] font-bold px-4 py-2 rounded-lg bg-gold text-almost-black hover:opacity-90 transition-opacity">
+                  Register a Request
+                </button>
+                <button onClick={() => { setRequestTab('Future Item Wishlist'); setEditWishlistItem(null); setShowWishlistModal(true) }}
+                  className="inline-flex items-center justify-center gap-1.5 text-[12px] lg:text-[13px] font-bold px-4 py-2 rounded-lg border border-ivory/30 text-ivory hover:bg-white/10 transition-colors">
+                  <IconPlus /> Add Future Item
+                </button>
+              </div>
+            )}
+          />
 
           <div className="px-4 sm:px-7 lg:px-9 xl:px-10 py-3 sm:py-4 flex gap-1.5 sm:gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             {REQUEST_TABS.map(t => (
@@ -941,8 +957,8 @@ export default function ProfilePage() {
         ══════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
           <div className="bg-white rounded-2xl" style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
+            <DashboardBanner eyebrow="My Dashboard" title="Favourites" />
             <div className="px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-7 lg:pt-8 pb-5 sm:pb-6 lg:pb-8">
-              <h2 className="font-display text-charcoal font-semibold leading-tight mb-1" style={{ fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)' }}>Favourites</h2>
               <p className="text-taupe text-[12px] lg:text-[13px] mb-4 sm:mb-5 lg:mb-7">Saved listed auctions/items</p>
               <Link to="/favourites" className="btn-shimmer inline-flex items-center text-almost-black text-[12px] sm:text-[13px] font-bold px-4 lg:px-5 py-2 sm:py-2.5 rounded-lg"
                 style={{ background: 'linear-gradient(135deg, #D4B87A 0%, #C6A972 50%, #B8955A 100%)' }}>
@@ -951,8 +967,8 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="bg-white rounded-2xl" style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
+            <DashboardBanner eyebrow="My Dashboard" title="Statements" />
             <div className="px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-7 lg:pt-8 pb-5 sm:pb-6 lg:pb-8">
-              <h2 className="font-display text-charcoal font-semibold leading-tight mb-1" style={{ fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)' }}>Statements</h2>
               <p className="text-taupe text-[12px] lg:text-[13px] mb-4 sm:mb-5 lg:mb-7">Wallet + Reward Credits</p>
               <Link to="/wallet" className="btn-shimmer inline-flex items-center text-almost-black text-[12px] sm:text-[13px] font-bold px-4 lg:px-5 py-2 sm:py-2.5 rounded-lg"
                 style={{ background: 'linear-gradient(135deg, #D4B87A 0%, #C6A972 50%, #B8955A 100%)' }}>
@@ -972,18 +988,9 @@ export default function ProfilePage() {
         ══════════════════════════════════════════════════════════════ */}
         <div className="bg-white rounded-xl" style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
           <div className="px-4 sm:px-6 lg:px-9 xl:px-10 py-3.5 lg:py-4 flex flex-wrap items-center justify-between gap-y-2 gap-x-0">
-            <button onClick={() => { setEditMode(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-              className="text-[12px] sm:text-[13px] text-taupe hover:text-charcoal transition-colors px-1 py-1">
-              Edit Profile
-            </button>
             <button onClick={() => { setShowAddresses(v => !v); setTimeout(() => document.getElementById('addresses-anchor')?.scrollIntoView({ behavior: 'smooth' }), 50) }}
               className="text-[12px] sm:text-[13px] text-taupe hover:text-charcoal transition-colors px-1 py-1">
               Addresses
-            </button>
-            <button
-              className="text-[12px] sm:text-[13px] text-taupe hover:text-charcoal transition-colors px-1 py-1"
-              onClick={() => { setEditMode(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
-              Language
             </button>
             <button onClick={() => setShowChangePass(true)}
               className="text-[12px] sm:text-[13px] text-taupe hover:text-charcoal transition-colors px-1 py-1">

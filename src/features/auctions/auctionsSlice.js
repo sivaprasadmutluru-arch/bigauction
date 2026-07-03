@@ -16,8 +16,10 @@ export const fetchBids          = createAsyncThunk('auctions/fetchBids',     asy
   catch (err) { return rejectWithValue(err.message) }
 })
 
-export const purchaseTicket     = createAsyncThunk('auctions/purchaseTicket',async (auctionId, { rejectWithValue }) => {
-  try { await api.post(`/auctions/${auctionId}/tickets/purchase`); return auctionId }
+export const purchaseTicket     = createAsyncThunk('auctions/purchaseTicket',async (payload, { rejectWithValue }) => {
+  const auctionId = typeof payload === 'object' ? payload.auctionId : payload
+  const body = typeof payload === 'object' ? payload.payment : undefined
+  try { await api.post(`/auctions/${auctionId}/tickets/purchase`, body); return auctionId }
   catch (err) { return rejectWithValue(err.message || 'Failed to purchase ticket') }
 })
 
