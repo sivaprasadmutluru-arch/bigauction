@@ -58,8 +58,6 @@ public class WalletService {
      */
     @Transactional
     public void distributeCreditsToLosers(Auction auction, Long winnerId) {
-        CreditConfig config = creditConfigRepository.findAll().stream().findFirst().orElse(null);
-        if (config == null) return;
         List<Ticket> losingTickets = ticketRepository.findByAuctionIdAndUserIdNot(auction.getId(), winnerId);
 
         losingTickets.stream()
@@ -67,10 +65,11 @@ public class WalletService {
                 .distinct()
                 .forEach(userId -> {
                     BigDecimal credit = auction.getTicketPrice()
-                            .multiply(config.getCreditPercentage())
+                            .multiply(BigDecimal.valueOf(3))
                             .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
-                    LocalDateTime expiresAt = config.isExpiryEnabled() && config.getExpiryDays() != null
+                    CreditConfig config = creditConfigRepository.findAll().stream().findFirst().orElse(null);
+                    LocalDateTime expiresAt = config != null && config.isExpiryEnabled() && config.getExpiryDays() != null
                             ? LocalDateTime.now().plusDays(config.getExpiryDays())
                             : null;
 
@@ -78,26 +77,39 @@ public class WalletService {
                 });
     }
 
-    /**
-     * Refunds the full ticket price as reward credits to all ticket holders when an auction
-     * closes with no winner. CreditConfig is not required — this is always a 100% refund.
-     */
+    /** Awards configured bonus credit to every ticket holder when an auction is cancelled after starting. */
     @Transactional
-    public void refundTicketsAsCredits(Auction auction) {
+    public void distributeInstantBuyBonuses(Auction auction, Long buyerId) {
         CreditConfig config = creditConfigRepository.findAll().stream().findFirst().orElse(null);
+        BigDecimal credit = auction.getTicketPrice()
+                .multiply(BigDecimal.valueOf(5))
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         LocalDateTime expiresAt = config != null && config.isExpiryEnabled() && config.getExpiryDays() != null
                 ? LocalDateTime.now().plusDays(config.getExpiryDays())
                 : null;
 
+        ticketRepository.findByAuctionIdAndUserIdNot(auction.getId(), buyerId).stream()
+                .map(ticket -> ticket.getUser().getId())
+                .distinct()
+                .forEach(userId -> creditRewardWallet(userId, credit,
+                        "5% Instant Buy cancellation credit for auction #" + auction.getId(), auction.getId(), expiresAt));
+    }
+
+    /**
+     * Returns the full ticket price to the withdrawable wallet balance when an auction
+     * does not start or closes with no winner.
+     */
+    @Transactional
+    public void refundTicketsAsCredits(Auction auction) {
         ticketRepository.findByAuctionId(auction.getId()).stream()
                 .map(ticket -> ticket.getUser().getId())
                 .distinct()
-                .forEach(userId -> creditRewardWallet(
+                .forEach(userId -> creditWallet(
                         userId,
                         auction.getTicketPrice(),
+                        TransactionReason.TICKET_REFUND,
                         "Ticket refund for auction #" + auction.getId(),
-                        auction.getId(),
-                        expiresAt));
+                        auction.getId(), null));
     }
 
     /**

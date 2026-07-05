@@ -133,6 +133,15 @@ public class AuctionService {
      */
     @Transactional
     public void finalizeAsSold(Auction auction, User winner) {
+        finalizeSale(auction, winner, false);
+    }
+
+    @Transactional
+    public void finalizeAsInstantBuy(Auction auction, User buyer) {
+        finalizeSale(auction, buyer, true);
+    }
+
+    private void finalizeSale(Auction auction, User winner, boolean instantBuy) {
         auction.setStatus(AuctionStatus.SOLD);
         auction.setEndTime(LocalDateTime.now());
         auction.setWinner(winner);
@@ -142,7 +151,8 @@ public class AuctionService {
         Product product = productService.findById(auction.getProduct().getId());
         product.setSold(true);
 
-        walletService.distributeCreditsToLosers(auction, winner.getId());
+        if (instantBuy) walletService.distributeInstantBuyBonuses(auction, winner.getId());
+        else walletService.distributeCreditsToLosers(auction, winner.getId());
         broadcastService.broadcastAuctionStatus(auction.getId(), toResponse(auction));
 
         // Notify the winner personally

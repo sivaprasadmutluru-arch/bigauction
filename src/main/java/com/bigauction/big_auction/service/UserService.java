@@ -85,6 +85,7 @@ public class UserService {
                 .name(user.getName())
                 .nickname(user.getNickname())
                 .email(user.getEmail())
+                .emailVerified(user.isEmailVerified())
                 .phone(user.getPhone())
                 .phoneVerified(user.isPhoneVerified())
                 .language(user.getLanguage())

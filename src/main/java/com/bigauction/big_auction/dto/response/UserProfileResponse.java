@@ -14,6 +14,7 @@ public class UserProfileResponse {
     private String name;
     private String nickname;
     private String email;
+    private boolean emailVerified;
     private String phone;
     private boolean phoneVerified;
     private String language;

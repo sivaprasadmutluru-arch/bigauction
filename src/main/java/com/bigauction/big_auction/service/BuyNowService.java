@@ -88,7 +88,7 @@ public class BuyNowService {
         // Finalize: mark product sold, close auction, distribute credits to losers
         product.setSold(true);
         if (auctionOpt.isPresent()) {
-            auctionService.finalizeAsSold(auctionOpt.get(), buyer);
+            auctionService.finalizeAsInstantBuy(auctionOpt.get(), buyer);
         }
 
         return toResponse(order);

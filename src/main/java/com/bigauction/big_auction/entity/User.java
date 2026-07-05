@@ -29,6 +29,10 @@ public class User extends BaseEntity {
 
     @Column(nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
     private boolean phoneVerified = false;
 
     @Column(length = 10, columnDefinition = "varchar(10) default 'en'")

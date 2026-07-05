@@ -24,7 +24,7 @@ public class Wallet extends BaseEntity {
     @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
 
-    /** Non-withdrawable reward credits (auction loss refunds). Tracked separately from cash balance. */
+    /** Non-withdrawable credits: 3% for losing, 5% when Instant Buy cancels the auction. */
     @Column(nullable = false, precision = 12, scale = 2, columnDefinition = "numeric(12,2) default 0")
     @Builder.Default
     private BigDecimal rewardCredits = BigDecimal.ZERO;
