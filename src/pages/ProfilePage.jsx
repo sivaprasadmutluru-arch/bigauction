@@ -578,10 +578,10 @@ export default function ProfilePage() {
                 {user?.name || 'Member'}
               </h1>
 
-              {/* Nickname + Account Status */}
+              {/* Last name + Account Status */}
               <div className="grid grid-cols-2 gap-x-3 sm:gap-x-10 lg:gap-x-20 mb-2.5 sm:mb-3 lg:mb-4">
                 <div>
-                  <FieldLabel>Nickname</FieldLabel>
+                  <FieldLabel>Last Name</FieldLabel>
                   <p className="text-ivory text-[12px] sm:text-[14px] lg:text-[15px] font-semibold">
                     {user?.nickname || user?.name?.split(' ')[0] || 'Member'}
                   </p>
@@ -604,7 +604,7 @@ export default function ProfilePage() {
                   <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium px-2 sm:px-2.5 py-0.5 rounded-full leading-none flex-shrink-0"
                         style={{ border: '1px solid rgba(255,255,255,0.28)', color: 'rgba(242,231,213,0.7)' }}>
                     <span className="hidden sm:inline-flex"><IconShield /></span>
-                    Verified
+                    {user?.emailVerified ? 'Verified' : 'Not verified'}
                   </span>
                 </div>
               </div>
@@ -614,11 +614,11 @@ export default function ProfilePage() {
                 <FieldLabel>Mobile Number</FieldLabel>
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <p className="text-ivory text-[12px] sm:text-[14px] lg:text-[15px]">{user?.phone || '+971 XX XXX XXXX'}</p>
-                  {user?.phone && user?.phoneVerified && (
+                  {user?.phone && (
                     <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium px-2 sm:px-2.5 py-0.5 rounded-full leading-none flex-shrink-0"
                           style={{ border: '1px solid rgba(255,255,255,0.28)', color: 'rgba(242,231,213,0.7)' }}>
                       <span className="hidden sm:inline-flex"><IconShield /></span>
-                      Verified
+                      {user?.phoneVerified ? 'Verified' : 'Not verified'}
                     </span>
                   )}
                 </div>
@@ -708,7 +708,7 @@ export default function ProfilePage() {
                   AED {rewardCredits.toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                 </p>
                 <p className="text-[10px] sm:text-[11px] lg:text-[12px] mt-1.5 sm:mt-2 lg:mt-3" style={{ color: 'rgba(242,231,213,0.38)' }}>
-                  <span className="hidden sm:inline">For future </span>auction tickets only
+                  Tickets only · cannot be withdrawn or transferred
                 </p>
               </div>
             </div>
@@ -763,7 +763,10 @@ export default function ProfilePage() {
             )}
           />
 
-          <div className="px-4 sm:px-7 lg:px-9 xl:px-10 pb-3 sm:pb-4 flex gap-1.5 sm:gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+          <div
+            className="bg-white px-4 sm:px-7 lg:px-9 xl:px-10 pt-3 sm:pt-4 pb-3 sm:pb-4 flex gap-1.5 sm:gap-2 overflow-x-auto"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
             {AUCTION_TABS.map(t => (
               <button key={t} onClick={() => setAuctionTab(t)}
                 className="flex-shrink-0 text-[11px] sm:text-[13px] px-3 sm:px-5 py-1.5 rounded-full font-medium transition-colors whitespace-nowrap"

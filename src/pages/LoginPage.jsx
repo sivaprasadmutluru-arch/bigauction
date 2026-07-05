@@ -32,7 +32,7 @@ const lbl = 'text-xs font-semibold text-[#2C2C2C] leading-tight'
 const inp = 'w-full text-sm text-[#2C2C2C] placeholder-[#B8ACA0] focus:outline-none bg-transparent mt-0.5'
 
 const Field = ({ icon, children, right }) => (
-  <div className="flex items-center gap-3 border border-[#E2D8CC] rounded-xl px-4 py-2.5 bg-white focus-within:border-[#C6A972] transition-colors">
+  <div className="flex items-center gap-3 border border-[#E2D8CC] rounded-xl px-4 py-2.5 bg-white transition-colors">
     <div className="flex-shrink-0">{icon}</div>
     <div className="flex-1 min-w-0">{children}</div>
     {right && <div className="flex-shrink-0">{right}</div>}
@@ -50,9 +50,14 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false)
 
   useEffect(() => {
-    if (user) navigate(from && from !== '/' ? from : '/profile', { replace: true })
+    if (user) {
+      const destination = from && from !== '/'
+        ? from
+        : user.role === 'ADMIN' ? '/admin' : '/'
+      navigate(destination, { replace: true })
+    }
     return () => dispatch(clearError())
-  }, [user])
+  }, [user, from, navigate, dispatch])
 
   const onChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   const onSubmit = e => { e.preventDefault(); dispatch(login(form)) }
@@ -129,11 +134,25 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <form onSubmit={onSubmit} className="space-y-2">
+              <form onSubmit={onSubmit} autoComplete="off" className="space-y-2">
 
-                <Field icon={<MailIcon />}>
+                <Field icon={<MailIcon />} right={form.email && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm(f => ({ ...f, email: '' }))
+                      dispatch(clearError())
+                    }}
+                    aria-label="Clear email address"
+                    title="Clear email"
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[#A99E94] hover:text-charcoal hover:bg-[#F3EEE8] transition-colors text-xl leading-none"
+                  >
+                    ×
+                  </button>
+                )}>
                   <p className={lbl}>Email Address</p>
                   <input name="email" value={form.email} onChange={onChange} required type="email"
+                    autoComplete="off" data-lpignore="true" data-1p-ignore="true"
                     placeholder="Enter your email address" className={inp} />
                 </Field>
 
@@ -144,6 +163,7 @@ export default function LoginPage() {
                 }>
                   <p className={lbl}>Password</p>
                   <input name="password" value={form.password} onChange={onChange} required
+                    autoComplete="new-password" data-lpignore="true" data-1p-ignore="true"
                     type={showPw ? 'text' : 'password'} placeholder="Enter your password" className={inp} />
                 </Field>
 

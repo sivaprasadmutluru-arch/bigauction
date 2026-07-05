@@ -1,5 +1,33 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import heroImg from '../../assets/hero.png'
+import ImageCarousel from './ImageCarousel'
+import luxuryWatchImg from '../../assets/hero-luxury-watch-v3.png'
+import luxuryBagImg from '../../assets/hero-luxury-bag-v3.png'
+import luxuryJewelleryImg from '../../assets/hero-luxury-jewellery-v3.png'
+import luxuryRingImg from '../../assets/hero-luxury-ring-v3.png'
+
+const HERO_SLIDES = [
+  {
+    image: luxuryWatchImg, label: 'Watches', position: 'center', theme: 'light',
+    title: ['Exclusive luxury.', 'Unbeatable excitement.'],
+    copy: ['Premium timepieces. Transparent auctions.', 'Your next luxury find is here.'],
+  },
+  {
+    image: luxuryBagImg, label: 'Bags', position: 'center', theme: 'dark',
+    title: ['Icons of style.', 'Made to be treasured.'],
+    copy: ['Exceptional handbags. Verified authenticity.', 'Discover timeless craftsmanship.'],
+  },
+  {
+    image: luxuryJewelleryImg, label: 'Jewellery', position: 'center', theme: 'light',
+    title: ['Brilliance, curated.', 'Beauty without compromise.'],
+    copy: ['Fine jewellery. Transparent auctions.', 'Find the piece that becomes your signature.'],
+  },
+  {
+    image: luxuryRingImg, label: 'Diamond Rings', position: 'center', theme: 'dark',
+    title: ['A timeless promise.', 'Crafted to captivate.'],
+    copy: ['Exceptional rings. Verified authenticity.', 'Discover brilliance made to last.'],
+  },
+]
 
 const TRUST = [
   {
@@ -41,24 +69,33 @@ const TRUST = [
 ]
 
 export default function HeroBanner() {
+  const [activeSlide, setActiveSlide] = useState(0)
+  const active = HERO_SLIDES[activeSlide] || HERO_SLIDES[0]
+  const dark = active.theme === 'dark'
+
   return (
-    <section className="bg-ivory overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-0 items-center py-10 sm:py-14 lg:py-0 lg:min-h-[500px]">
+    <section
+      className="relative bg-[#f7f1e7] overflow-hidden"
+      style={{ width: '100%', height: 'clamp(520px, 34vw, 650px)' }}
+    >
+      <ImageCarousel slides={HERO_SLIDES} onIndexChange={setActiveSlide} />
+      <div className={`absolute inset-0 bg-gradient-to-r pointer-events-none ${dark ? 'from-[#061711]/95 via-[#061711]/80 to-transparent lg:via-[#061711]/20' : 'from-[#f7f1e7] via-[#f7f1e7]/95 to-transparent lg:via-[#f7f1e7]/35'}`} />
+      <div className="relative z-10 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid h-full lg:grid-cols-2 items-center py-12 sm:py-16 lg:py-0">
 
           {/* Left: text */}
           <div className="flex flex-col justify-center">
-            <h1 className="font-display text-charcoal text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.08] tracking-tight">
-              Exclusive luxury.<br />Unbeatable excitement.
+            <h1 className={`font-display text-4xl sm:text-5xl lg:text-[3.55rem] font-semibold leading-[1.03] tracking-tight ${dark ? 'text-ivory' : 'text-emerald'}`}>
+              {active.title[0]}<br />{active.title[1]}
             </h1>
-            <p className="text-taupe text-sm sm:text-base mt-4 sm:mt-5 leading-relaxed max-w-md">
-              Premium items. Transparent auctions.<br />Your next luxury find is here.
+            <p className={`text-sm sm:text-base mt-4 sm:mt-5 leading-relaxed max-w-md ${dark ? 'text-ivory/75' : 'text-taupe'}`}>
+              {active.copy[0]}<br />{active.copy[1]}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 mt-8">
               <Link
                 to="/auctions"
-                className="inline-flex items-center gap-2 bg-charcoal text-ivory font-bold px-6 py-3 rounded text-sm hover:bg-emerald transition-colors uppercase tracking-wide"
+                className={`inline-flex items-center gap-2 font-bold px-6 py-3 rounded text-sm transition-colors uppercase tracking-wide ${dark ? 'bg-gold text-charcoal hover:bg-ivory' : 'bg-charcoal text-ivory hover:bg-emerald'}`}
               >
                 Explore Auctions
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -67,7 +104,7 @@ export default function HeroBanner() {
               </Link>
               <Link
                 to="/how-it-works"
-                className="inline-flex items-center gap-2 border border-charcoal text-charcoal font-semibold px-6 py-3 rounded text-sm hover:border-emerald hover:text-emerald transition-colors uppercase tracking-wide"
+                className={`inline-flex items-center gap-2 border font-semibold px-6 py-3 rounded text-sm transition-colors uppercase tracking-wide ${dark ? 'border-ivory/70 text-ivory hover:border-gold hover:text-gold' : 'border-charcoal text-charcoal hover:border-emerald hover:text-emerald'}`}
               >
                 <span className="flex items-center justify-center w-5 h-5 rounded-full border border-current">
                   <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="currentColor">
@@ -79,30 +116,20 @@ export default function HeroBanner() {
             </div>
 
             {/* Trust badges */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-10 pt-8 border-t border-taupe/15">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-9 max-w-2xl">
               {TRUST.map(t => (
-                <div key={t.line1} className="flex items-center gap-3 rounded-lg bg-white/80 border border-gold/20 px-4 py-3 shadow-sm">
-                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-emerald">
-                    <div className="[&>svg]:w-6 [&>svg]:h-6">{t.icon}</div>
-                  </div>
+                <div key={t.line1} className={`flex items-center gap-2.5 rounded-xl border border-gold/25 backdrop-blur-sm px-3 py-3 shadow-sm ${dark ? 'bg-black/25' : 'bg-white/65'}`}>
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gold/10">{t.icon}</div>
                   <div>
-                    <p className="text-charcoal text-sm font-bold leading-snug">{t.line1}</p>
-                    <p className="text-taupe text-xs leading-snug mt-0.5">{t.line2}</p>
+                    <p className={`text-[11px] font-bold leading-snug ${dark ? 'text-ivory' : 'text-charcoal'}`}>{t.line1}</p>
+                    <p className={`text-[10px] leading-snug ${dark ? 'text-ivory/60' : 'text-taupe'}`}>{t.line2}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right: hero image */}
-          <div className="hidden lg:flex items-end justify-end h-full">
-            <img
-              src={heroImg}
-              alt="Luxury auction"
-              className="w-full max-w-lg object-contain object-bottom"
-              style={{ maxHeight: '500px' }}
-            />
-          </div>
+          <div className="hidden lg:block" aria-hidden="true" />
 
         </div>
       </div>

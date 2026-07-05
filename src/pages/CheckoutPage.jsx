@@ -522,7 +522,7 @@ function BuyNowSuccessScreen({ product, auction, user, completedAt }) {
 }
 
 // ── Form helpers ───────────────────────────────────────────────────────
-function InputField({ label, name, value, onChange, type = 'text', required, placeholder }) {
+function InputField({ label, name, value, onChange, type = 'text', required, placeholder, inputMode, maxLength, pattern, helpText }) {
   return (
     <div>
       <label className="block text-taupe text-xs font-medium mb-1.5">
@@ -531,8 +531,10 @@ function InputField({ label, name, value, onChange, type = 'text', required, pla
       <input
         type={type} name={name} value={value} onChange={onChange}
         required={required} placeholder={placeholder}
+        inputMode={inputMode} maxLength={maxLength} pattern={pattern}
         className="w-full bg-white border border-taupe/25 text-charcoal placeholder-taupe/30 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/20 transition-all"
       />
+      {helpText && <p className="text-taupe/70 text-[11px] mt-1.5">{helpText}</p>}
     </div>
   )
 }
@@ -765,7 +767,7 @@ export default function CheckoutPage() {
 
   const [step, setStep]             = useState(1)
   const [address, setAddress]       = useState(EMPTY_ADDRESS)
-  const [creditInput, setCreditInput] = useState('0')
+  const [creditInput, setCreditInput] = useState(null)
   const [error, setError]           = useState(null)
   const [success, setSuccess]       = useState(false)
   const [completedAt, setCompletedAt] = useState(null)
@@ -833,21 +835,32 @@ export default function CheckoutPage() {
   const basePrice = type === 'buynow'
     ? Number(product.buyNowPrice)
     : Number(auction?.currentHighestBid || 0)
-  const credit    = Math.min(Math.max(Number(creditInput) || 0, 0), walletBal, basePrice)
+  const credit    = creditInput === null
+    ? Math.min(walletBal, basePrice)
+    : Math.min(Math.max(Number(creditInput) || 0, 0), walletBal, basePrice)
   const totalDue  = Math.max(basePrice - credit, 0)
 
-  const onAddressChange = e => setAddress(a => ({ ...a, [e.target.name]: e.target.value }))
+  const onAddressChange = e => {
+    const value = e.target.name === 'shippingPhone'
+      ? e.target.value.replace(/\D/g, '').slice(0, 10)
+      : e.target.value
+    setAddress(a => ({ ...a, [e.target.name]: value }))
+  }
+
+  const phoneValid = /^\d{10}$/.test(address.shippingPhone)
 
   const addressComplete =
     address.shippingName.trim() &&
-    address.shippingPhone.trim() &&
+    phoneValid &&
     address.shippingAddress.trim() &&
     address.shippingCity.trim()
 
   const onContinue = e => {
     e.preventDefault()
     if (!addressComplete) {
-      setError('Please fill in all required address fields.')
+      setError(address.shippingPhone && !phoneValid
+        ? 'Phone number must contain exactly 10 digits.'
+        : 'Please fill in all required address fields.')
       return
     }
     setError(null)
@@ -862,12 +875,16 @@ export default function CheckoutPage() {
         await dispatch(buyNow({
           productId: product.id,
           creditToApply: credit,
+          paymentMethod: totalDue > 0 ? 'CARD' : 'WALLET',
+          cardAmount: totalDue,
           address,
         })).unwrap()
       } else {
         await dispatch(checkoutAuctionWin({
           auctionId: auction.id,
           creditToApply: credit,
+          paymentMethod: totalDue > 0 ? 'CARD' : 'WALLET',
+          cardAmount: totalDue,
           address,
         })).unwrap()
       }
@@ -925,7 +942,19 @@ export default function CheckoutPage() {
 
                 <div className="bg-white border border-taupe/15 rounded-xl p-6 space-y-4">
                   <InputField label="Full Name" name="shippingName" value={address.shippingName} onChange={onAddressChange} required placeholder="As it appears on your ID" />
-                  <InputField label="Phone Number" name="shippingPhone" value={address.shippingPhone} onChange={onAddressChange} type="tel" required placeholder="+971 50 000 0000" />
+                  <InputField
+                    label="Phone Number"
+                    name="shippingPhone"
+                    value={address.shippingPhone}
+                    onChange={onAddressChange}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    required
+                    placeholder="0501234567"
+                    helpText={`${address.shippingPhone.length}/10 digits`}
+                  />
                   <div>
                     <label className="block text-taupe text-xs font-medium mb-1.5">Country<span className="text-gold ml-0.5">*</span></label>
                     <select
@@ -985,14 +1014,14 @@ export default function CheckoutPage() {
                       <div className="flex-1">
                         <label className="block text-taupe text-xs mb-1.5">Amount to apply (AED)</label>
                         <input
-                          type="number" value={creditInput} onChange={e => setCreditInput(e.target.value)}
+                          type="number" value={credit} onChange={e => setCreditInput(e.target.value)}
                           min="0" max={Math.min(walletBal, basePrice)} step="0.01"
                           className="w-full bg-white border border-taupe/25 text-charcoal rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gold transition-colors"
                         />
                       </div>
                       <button
                         type="button"
-                        onClick={() => setCreditInput(String(Math.min(walletBal, basePrice)))}
+                        onClick={() => setCreditInput(null)}
                         className="mt-5 text-xs text-gold border border-gold/30 px-3 py-2.5 rounded-lg hover:bg-gold/10 transition-colors"
                       >
                         Use Max
@@ -1004,6 +1033,30 @@ export default function CheckoutPage() {
                         <span>AED {credit.toLocaleString()} wallet credit will be applied</span>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {totalDue > 0 && (
+                  <div className="bg-white border-2 border-emerald rounded-xl p-5">
+                    <div className="flex items-center gap-3">
+                      <span className="w-5 h-5 rounded-full border-2 border-emerald bg-emerald flex items-center justify-center flex-shrink-0">
+                        <span className="w-2 h-2 rounded-full bg-white" />
+                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-charcoal text-sm font-semibold">Credit / Debit Card</p>
+                          <p className="text-charcoal text-sm font-bold">AED {totalDue.toLocaleString()}</p>
+                        </div>
+                        <p className="text-taupe text-xs mt-0.5">Pay the remaining balance securely by card</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="bg-[#1A1F71] text-white text-[9px] font-bold italic px-2 py-[3px] rounded">VISA</span>
+                        <div className="flex -space-x-1.5">
+                          <span className="w-5 h-5 rounded-full bg-[#EB001B]" />
+                          <span className="w-5 h-5 rounded-full bg-[#F79E1B]" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -1026,8 +1079,8 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   {totalDue > 0 && (
-                    <p className="text-taupe text-xs mt-4 bg-taupe/10 rounded-lg px-4 py-3">
-                      Remaining balance of AED {totalDue.toLocaleString()} will be invoiced and collected via bank transfer before dispatch.
+                    <p className="text-emerald text-xs mt-4 bg-emerald/5 border border-emerald/20 rounded-lg px-4 py-3">
+                      AED {credit.toLocaleString()} from wallet + AED {totalDue.toLocaleString()} by card.
                     </p>
                   )}
                   {totalDue === 0 && (
@@ -1054,7 +1107,9 @@ export default function CheckoutPage() {
                       Processing…
                     </span>
                   ) : (
-                    `Confirm Order — AED ${totalDue.toLocaleString()}`
+                    totalDue > 0
+                      ? `Pay by Card — AED ${totalDue.toLocaleString()}`
+                      : 'Confirm Order — Wallet Payment'
                   )}
                 </button>
 

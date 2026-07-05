@@ -38,8 +38,8 @@ export const placeBid           = createAsyncThunk('auctions/placeBid',      asy
   catch (err) { return rejectWithValue(err.message || 'Failed to place bid') }
 })
 
-export const checkoutAuctionWin = createAsyncThunk('auctions/checkout',      async ({ auctionId, creditToApply, address }, { rejectWithValue }) => {
-  try { return (await api.post(`/auctions/${auctionId}/checkout`, { creditToApply, ...address })).data }
+export const checkoutAuctionWin = createAsyncThunk('auctions/checkout',      async ({ auctionId, creditToApply, paymentMethod, cardAmount, address }, { rejectWithValue }) => {
+  try { return (await api.post(`/auctions/${auctionId}/checkout`, { creditToApply, paymentMethod, cardAmount, ...address })).data }
   catch (err) { return rejectWithValue(err.message || 'Checkout failed') }
 })
 

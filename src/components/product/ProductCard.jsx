@@ -96,7 +96,9 @@ export default function ProductCard({ product, isFavourite, onToggleFavourite })
   const ticketsSold  = auction?.ticketsSold  || 0
   const ticketTarget = auction?.ticketTarget || 0
   const ticketPct    = ticketTarget > 0 ? Math.min((ticketsSold / ticketTarget) * 100, 100) : 0
-  const buyNowAvail  = !!(buyNowPrice && auction?.buyNowEnabled && hasAuction)
+  // `buyNowEnabled` only means the feature was configured by an admin.
+  // The API's computed `buyNowAvailable` also applies time/threshold/status rules.
+  const buyNowAvail  = !!(buyNowPrice && auction?.buyNowAvailable && hasAuction)
 
   const countdownTarget =
     isActive  ? auction.scheduledEndTime :

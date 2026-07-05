@@ -19,6 +19,7 @@ const AUTH_COLOR  = {
   PENDING:       'text-gold border-gold/30 bg-gold/10',
   NOT_REQUIRED:  'text-taupe border-taupe/30 bg-taupe/10',
 }
+const PRODUCT_PURCHASE_EVENT = 'bigauction:product-purchase'
 
 // ── Helpers ───────────────────────────────────────────────────────────
 function timeAgo(dateStr) {
@@ -157,6 +158,7 @@ function useCountdown(targetDate) {
 function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
   const dispatch  = useDispatch()
   const navigate  = useNavigate()
+  const location  = useLocation()
   const [step, setStep]           = useState(1)
   const [payMethod, setPayMethod] = useState('wallet')
   const [busy, setBusy]           = useState(false)
@@ -190,6 +192,17 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
   const TITLES = ['', 'TICKET DETAILS', 'CHOOSE PAYMENT METHOD', 'TICKET PURCHASED']
 
   const methodLabel = payMethod === 'wallet' ? 'Wallet Balance' : payMethod === 'credits' ? 'Reward Credits' : 'Credit / Debit Card'
+
+  const onAddMoney = () => {
+    navigate('/wallet', {
+      state: {
+        openTopUp: true,
+        returnTo: `${location.pathname}${location.search}`,
+        returnLabel: product.name,
+        requiredAmount: Math.max(ticketPrice - walletBal, 0),
+      },
+    })
+  }
 
   const onConfirm = async () => {
     if (payMethod === 'card') { onCardPayment(); return }
@@ -460,6 +473,24 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
                     </div>
                   </button>
 
+                  {!canUseWallet && (
+                    <div className="rounded-xl border border-gold/30 bg-[#fdf8ee] px-4 py-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[#1a1a1a] text-[12px] font-semibold">Not enough wallet balance</p>
+                        <p className="text-[#888] text-[10px] mt-0.5">
+                          Add {currency} {fmt2(ticketPrice - walletBal)} to use your wallet.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onAddMoney}
+                        className="flex-shrink-0 bg-gold text-charcoal text-[11px] font-bold px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                      >
+                        Add Money
+                      </button>
+                    </div>
+                  )}
+
                   {/* ── Reward Credits ── */}
                   <button
                     onClick={() => canUseCredits && setPayMethod('credits')}
@@ -674,16 +705,26 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
 }
 
 // ── Image Zoom Lightbox ───────────────────────────────────────────────
-function ImageZoom({ imageUrl, alt, onClose }) {
+function ImageZoom({ imageUrl, alt, onClose, onPrev, onNext, hasMultiple }) {
   useEffect(() => {
-    const onKey = e => { if (e.key === 'Escape') onClose() }
+    const onKey = e => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft' && hasMultiple) onPrev()
+      if (e.key === 'ArrowRight' && hasMultiple) onNext()
+    }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, onPrev, onNext, hasMultiple])
 
   return (
     <div className="fixed inset-0 z-50 bg-almost-black/95 flex items-center justify-center p-4" onClick={onClose}>
       <button onClick={onClose} className="absolute top-4 right-4 text-taupe hover:text-ivory text-3xl font-light leading-none z-10">×</button>
+      {hasMultiple && (
+        <>
+          <button onClick={e => { e.stopPropagation(); onPrev() }} aria-label="Previous image" className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/90 text-charcoal flex items-center justify-center shadow-xl z-10"><IconChevronLeft className="w-6 h-6" /></button>
+          <button onClick={e => { e.stopPropagation(); onNext() }} aria-label="Next image" className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/90 text-charcoal flex items-center justify-center shadow-xl z-10"><IconChevronRight className="w-6 h-6" /></button>
+        </>
+      )}
       <img src={imageUrl} alt={alt} onClick={e => e.stopPropagation()} className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" />
     </div>
   )
@@ -807,6 +848,15 @@ function LiveAuctionPanel({ auction, bids, product }) {
     navigate('/checkout', { state: { type: 'buynow', product, auction } })
   }
 
+  useEffect(() => {
+    const handlePurchaseRequest = event => {
+      if (event.detail === 'ticket') onTicket()
+      if (event.detail === 'buyNow' && buyNowAvail) onBuyNow()
+    }
+    window.addEventListener(PRODUCT_PURCHASE_EVENT, handlePurchaseRequest)
+    return () => window.removeEventListener(PRODUCT_PURCHASE_EVENT, handlePurchaseRequest)
+  })
+
   const onSetupAutoBid = async e => {
     e.preventDefault()
     if (!autoBidIncrement || !autoBidMax) return
@@ -852,41 +902,53 @@ function LiveAuctionPanel({ auction, bids, product }) {
     <div className="space-y-0">
 
       {/* Header row: LIVE badge + countdown */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="inline-flex items-center gap-2 bg-emerald text-ivory text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full">
+      <div className="flex items-start justify-between border border-taupe/15 border-b-0 rounded-t-xl px-4 pt-4 pb-3">
+        <span className="inline-flex items-center gap-2 text-emerald text-sm font-bold tracking-wide uppercase mt-1">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ivory opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-ivory" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald opacity-50" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald" />
           </span>
           Live Auction
         </span>
-        <span className="text-charcoal text-xs font-semibold tabular-nums">
-          Auction ends in <span className="text-emerald font-bold">{countdownStr}</span>
-        </span>
+        <div className="text-right">
+          <p className="text-taupe text-[10px] font-medium mb-1">Auction ends in</p>
+          <div className="flex items-center justify-end gap-1">
+            {[pad(countdown.dd), pad(countdown.hh), pad(countdown.mm), pad(countdown.ss)].map((val, i) => (
+              <span key={i} className="text-charcoal font-bold text-lg leading-none tabular-nums">
+                {i > 0 && <span className="text-taupe/50 mr-1">:</span>}{val}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center justify-end gap-[13px] mt-1">
+            {['DD', 'HH', 'MM', 'SS'].map(unit => (
+              <span key={unit} className="text-taupe/60 text-[8px] font-semibold w-4 text-center">{unit}</span>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Two price boxes */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-3 border-x border-taupe/15 px-4 pb-4">
         {/* Highest offer — dark green */}
-        <div className="bg-emerald rounded-xl px-4 py-4 flex flex-col gap-1.5">
-          <p className="text-gold/80 text-[9px] font-bold tracking-[0.14em] uppercase leading-tight">Highest Offer Now</p>
-          <p className="text-ivory text-xl font-bold font-display animate-bid-pop leading-none">
+        <div className="bg-emerald rounded-xl px-4 py-5 flex flex-col items-center text-center gap-2">
+          <p className="text-ivory/85 text-[10px] font-bold tracking-[0.12em] uppercase leading-tight">Highest Offer Now</p>
+          <p className="text-ivory text-2xl font-semibold font-display animate-bid-pop leading-none">
             {currentBid > 0 ? `AED ${currentBid.toLocaleString()}` : '—'}
           </p>
           {liveBidderName && currentBid > 0 ? (
-            <p className="text-ivory/50 text-[10px] leading-none">by {liveBidderName} {liveBidTime ? timeAgo(liveBidTime) : ''}</p>
+            <p className="text-ivory/80 text-[11px] leading-tight">by {liveBidderName}<br />{liveBidTime ? timeAgo(liveBidTime) : ''}</p>
           ) : (
             <p className="text-ivory/40 text-[10px] leading-none">No bids yet</p>
           )}
         </div>
 
         {/* Max bid amount — white bordered */}
-        <div className="border border-taupe/20 rounded-xl px-4 py-4 flex flex-col gap-1.5 bg-white">
-          <p className="text-taupe text-[9px] font-bold tracking-[0.14em] uppercase leading-tight">Maximum Bid Amount</p>
-          <p className="text-charcoal text-xl font-bold font-display leading-none">
+        <div className="border border-gold/35 rounded-xl px-4 py-5 flex flex-col items-center text-center gap-2 bg-[#fffdf9]">
+          <p className="text-gold text-[10px] font-bold tracking-[0.12em] uppercase leading-tight">Maximum Bid Amount</p>
+          <p className="text-[#5b5751] text-2xl font-semibold font-display leading-none">
             {maxBidAmount ? `AED ${maxBidAmount.toLocaleString()}` : '—'}
           </p>
-          <p className="text-taupe/60 text-[10px] leading-none flex items-center gap-0.5">
+          <p className="text-[#6f6962] text-[10px] leading-none flex items-center gap-0.5">
             The highest allowed offer
             <IconInfo className="w-3 h-3 inline-block ml-0.5 text-taupe/40" />
           </p>
@@ -894,20 +956,20 @@ function LiveAuctionPanel({ auction, bids, product }) {
       </div>
 
       {/* Stats row: 3 cols */}
-      <div className="border border-taupe/15 rounded-xl overflow-hidden mb-4">
+      <div className="border border-taupe/15 rounded-b-xl overflow-hidden mb-4">
         <div className="grid grid-cols-3 divide-x divide-taupe/15">
 
           {/* Ticket price */}
           <div className="px-3 py-3 flex flex-col items-center gap-1 text-center">
-            <p className="text-taupe text-[8px] font-bold tracking-wider uppercase leading-tight">Auction Ticket Price</p>
-            <p className="text-gold font-bold text-sm leading-none">AED {Number(auction.ticketPrice || 0).toLocaleString()}</p>
-            <p className="text-taupe/60 text-[9px] leading-none">One ticket per user</p>
+            <p className="text-[#57524c] text-[9px] font-bold tracking-wider uppercase leading-tight">Auction Ticket Price</p>
+            <p className="text-charcoal font-bold text-base leading-none">AED {Number(auction.ticketPrice || 0).toLocaleString()}</p>
+            <p className="text-[#77716a] text-[9px] leading-none">One ticket per user</p>
           </div>
 
           {/* Tickets sold */}
           <div className="px-3 py-3 flex flex-col items-center gap-1 text-center">
-            <p className="text-taupe text-[8px] font-bold tracking-wider uppercase leading-tight">Tickets Sold</p>
-            <p className="text-charcoal font-bold text-sm leading-none">{ticketsSold}/{ticketTarget}</p>
+            <p className="text-[#57524c] text-[9px] font-bold tracking-wider uppercase leading-tight">Tickets Sold</p>
+            <p className="text-charcoal font-bold text-base leading-none">{ticketsSold} / {ticketTarget}</p>
             <div className="w-full h-1 bg-taupe/20 rounded-full overflow-hidden my-0.5">
               <div className="h-full bg-gold rounded-full transition-all duration-700" style={{ width: `${ticketPct}%` }} />
             </div>
@@ -916,13 +978,13 @@ function LiveAuctionPanel({ auction, bids, product }) {
 
           {/* Countdown */}
           <div className="px-3 py-3 flex flex-col items-center gap-1 text-center">
-            <p className="text-taupe text-[8px] font-bold tracking-wider uppercase leading-tight">Auction Ends In</p>
+            <p className="text-[#57524c] text-[9px] font-bold tracking-wider uppercase leading-tight">Auction Ends In</p>
             <div className="flex items-center gap-0.5">
               {[[pad(countdown.dd),'DD'],[pad(countdown.hh),'HH'],[pad(countdown.mm),'MM'],[pad(countdown.ss),'SS']].map(([val, unit], i) => (
                 <div key={unit} className="flex items-center">
                   {i > 0 && <span className="text-gold text-xs mx-px">:</span>}
                   <div className="flex flex-col items-center">
-                    <span className="text-charcoal font-bold text-xs leading-none tabular-nums">{val}</span>
+                    <span className="text-charcoal font-bold text-sm leading-none tabular-nums">{val}</span>
                     <span className="text-taupe text-[7px] leading-none mt-0.5">{unit}</span>
                   </div>
                 </div>
@@ -1428,6 +1490,15 @@ function PendingAuctionPanel({ auction, product }) {
     if (!user) { navigate('/login'); return }
     navigate('/checkout', { state: { type: 'buynow', product, auction } })
   }
+
+  useEffect(() => {
+    const handlePurchaseRequest = event => {
+      if (event.detail === 'ticket') onTicket()
+      if (event.detail === 'buyNow' && buyNowAvail) onBuyNow()
+    }
+    window.addEventListener(PRODUCT_PURCHASE_EVENT, handlePurchaseRequest)
+    return () => window.removeEventListener(PRODUCT_PURCHASE_EVENT, handlePurchaseRequest)
+  })
 
   return (
     <div className="space-y-4">
@@ -2033,6 +2104,179 @@ function BuyNowOnlyPanel({ product }) {
   )
 }
 
+// ── Buy Flow Infographic ────────────────────────────────────────────
+function DownArrow() {
+  return (
+    <div className="flex justify-center py-1.5">
+      <svg className="w-4 h-4 text-gold/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m0 0l-6-6m6 6l6-6" />
+      </svg>
+    </div>
+  )
+}
+
+function StepCard({ step, title, children, accent = 'taupe' }) {
+  const accentClasses = accent === 'emerald'
+    ? 'border-emerald/25'
+    : accent === 'gold'
+    ? 'border-gold/30'
+    : 'border-taupe/15'
+  return (
+    <div className={`bg-white rounded-xl border ${accentClasses} p-4 h-full`}>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="w-5 h-5 rounded-full bg-charcoal text-ivory text-[10px] font-bold flex items-center justify-center flex-shrink-0">{step}</span>
+        <p className="text-charcoal text-[11px] font-bold uppercase tracking-wider">{title}</p>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function BuyFlowInfographic({ product, auction }) {
+  const ticketPrice = auction?.ticketPrice ? Number(auction.ticketPrice) : null
+  const buyNowPrice = product.buyNowPrice ? Number(product.buyNowPrice) : null
+  const hasBuyNow   = !!buyNowPrice
+
+  const startPurchase = type => {
+    document.getElementById('auction-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    window.dispatchEvent(new CustomEvent(PRODUCT_PURCHASE_EVENT, { detail: type }))
+  }
+
+  const NOTES = [
+    { icon: <IconTicket className="w-4 h-4" />, text: 'One ticket per user, per auction.' },
+    { icon: <IconCalendar className="w-4 h-4" />, text: 'Buy a ticket before or during the live auction.' },
+    { icon: <IconBag className="w-4 h-4" />, text: 'Instant Buy is only available before bidding starts.' },
+    { icon: <IconShield className="w-4 h-4" />, text: 'All payments are secure and encrypted.' },
+  ]
+
+  return (
+    <div className="border border-gold/20 rounded-2xl p-5 sm:p-7 bg-[#fbf8f2]">
+
+      {/* Header */}
+      <div className="text-center mb-6">
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <div className="h-px w-10 bg-gold/50" />
+          <p className="text-emerald font-display font-semibold text-lg sm:text-xl">How Buying This Item Works</p>
+          <div className="h-px w-10 bg-gold/50" />
+        </div>
+        <p className="text-taupe text-xs">One ticket gives you access to bid — or skip ahead and buy it instantly.</p>
+      </div>
+
+      {/* STEP 1 */}
+      <div className="max-w-xs mx-auto">
+        <StepCard step={1} title="Ticket Details">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <IconTicket className="w-4 h-4 text-gold flex-shrink-0" />
+              <span className="text-charcoal text-xs font-semibold">Review auction &amp; ticket info</span>
+            </div>
+            <div className="flex items-center justify-between text-[11px] border-t border-taupe/10 pt-2">
+              <span className="text-taupe">Ticket Price</span>
+              <span className="text-charcoal font-bold">{ticketPrice ? `AED ${ticketPrice.toLocaleString()}` : '—'}</span>
+            </div>
+          </div>
+        </StepCard>
+      </div>
+      <p className="text-center text-taupe/70 text-[11px] mt-2">Review the auction and ticket details before proceeding.</p>
+
+      <DownArrow />
+
+      {/* STEP 2 — branch */}
+      <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <StepCard step={2} title="Buy a Ticket" accent="emerald">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <IconTicket className="w-4 h-4 text-emerald flex-shrink-0" />
+              <span className="text-charcoal text-xs font-semibold">Join the live auction &amp; place bids</span>
+            </div>
+            <p className="text-taupe text-[11px] leading-relaxed">Pay with Wallet, Reward Credits, or Card.</p>
+          </div>
+        </StepCard>
+
+        {/* OR divider */}
+        <span className="hidden sm:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-[#fbf8f2] border border-gold/30 text-gold text-[10px] font-bold items-center justify-center">
+          OR
+        </span>
+
+        <StepCard step={2} title="Buy It Now" accent="gold">
+          {hasBuyNow ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <IconBag className="w-4 h-4 text-gold flex-shrink-0" />
+                <span className="text-charcoal text-xs font-semibold">Skip the auction, secure it immediately</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] border-t border-taupe/10 pt-2">
+                <span className="text-taupe">Buy Now Price</span>
+                <span className="text-gold font-bold">AED {buyNowPrice.toLocaleString()}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <IconBag className="w-4 h-4 text-taupe/40 flex-shrink-0" />
+              <span className="text-taupe text-xs">Not available for this item</span>
+            </div>
+          )}
+        </StepCard>
+      </div>
+      <p className="text-center text-taupe/70 text-[11px] mt-2">Choose to join the live bidding, or buy the item outright.</p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <DownArrow />
+        <DownArrow />
+      </div>
+
+      {/* STEP 3 — outcomes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <StepCard step={3} title="Ticket Purchased" accent="emerald">
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald/15 flex items-center justify-center flex-shrink-0">
+              <IconCheck className="w-3 h-3 text-emerald" />
+            </span>
+            <span className="text-charcoal text-xs">You're ready to bid when the auction goes live.</span>
+          </div>
+        </StepCard>
+        <StepCard step={3} title="Item Secured" accent="gold">
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-gold/15 flex items-center justify-center flex-shrink-0">
+              <IconCheck className="w-3 h-3 text-gold" />
+            </span>
+            <span className="text-charcoal text-xs">Purchase confirmed — no bidding needed.</span>
+          </div>
+        </StepCard>
+      </div>
+      <p className="text-center text-taupe/70 text-[11px] mt-2">Either way, you're all set.</p>
+
+      {/* Important notes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-7 pt-6 border-t border-gold/15">
+        {NOTES.map((n, i) => (
+          <div key={i} className="flex items-center gap-2.5 text-taupe">
+            <span className="text-gold flex-shrink-0">{n.icon}</span>
+            <span className="text-[11px] leading-snug">{n.text}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div className="flex flex-col sm:flex-row gap-2.5 mt-6">
+        <button
+          onClick={() => startPurchase('ticket')}
+          className="flex-1 bg-emerald text-ivory font-bold text-xs uppercase tracking-wider py-3 rounded-xl hover:bg-emerald/90 transition-colors"
+        >
+          Buy a Ticket
+        </button>
+        {hasBuyNow && (
+          <button
+            onClick={() => startPurchase('buyNow')}
+            className="flex-1 bg-gold text-charcoal font-bold text-xs uppercase tracking-wider py-3 rounded-xl hover:opacity-90 transition-opacity"
+          >
+            Buy It Now
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Product Detail Page ───────────────────────────────────────────────
 export default function ProductDetailPage() {
   const { id }       = useParams()
@@ -2044,7 +2288,6 @@ export default function ProductDetailPage() {
   const [activeImg, setActiveImg]       = useState(0)
   const [zoomOpen, setZoomOpen]         = useState(false)
   const [descExpanded, setDescExpanded] = useState(false)
-
   const auctionId = product?.auction?.id
   const auction   = (liveAuction?.id === auctionId ? liveAuction : null) ?? product?.auction ?? null
 
@@ -2063,7 +2306,10 @@ export default function ProductDetailPage() {
 
   if (loading || !product) return <Loader text="Loading product…" />
 
-  const images     = (product.imageUrls || []).map(url => ({ imageUrl: url }))
+  const images = Array.from(new Set([
+    ...(product.imageUrls || []),
+    ...(product.images || []).map(image => typeof image === 'string' ? image : image?.imageUrl || image?.url),
+  ].filter(Boolean))).map(imageUrl => ({ imageUrl }))
   const hasAuction = !!auction
   const isActive   = auction?.status === 'ACTIVE'
   const isPending  = auction?.status === 'PENDING'
@@ -2109,7 +2355,14 @@ export default function ProductDetailPage() {
 
       {/* Image zoom lightbox */}
       {zoomOpen && images[activeImg] && (
-        <ImageZoom imageUrl={images[activeImg].imageUrl} alt={product.name} onClose={() => setZoomOpen(false)} />
+        <ImageZoom
+          imageUrl={images[activeImg].imageUrl}
+          alt={`${product.name} - image ${activeImg + 1}`}
+          onClose={() => setZoomOpen(false)}
+          onPrev={prevImg}
+          onNext={nextImg}
+          hasMultiple={images.length > 1}
+        />
       )}
 
       {/* Breadcrumb */}
@@ -2129,19 +2382,19 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Two-column layout: left ~60%, right ~40% */}
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-10 xl:gap-14 items-start">
+      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        {/* Balanced reference layout: gallery and auction controls share the page evenly. */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.03fr_0.97fr] gap-5 xl:gap-7 items-start">
 
           {/* ── LEFT COLUMN ── */}
-          <div className="space-y-6 animate-fade-up">
+          <div className="space-y-3 animate-fade-up">
 
             {/* Brand / Title / Badges (at top of left column) */}
-            <div>
-              <p className="text-gold text-xs font-bold uppercase tracking-[0.2em] mb-1">{product.brand}</p>
-              <h1 className="font-display text-charcoal text-3xl sm:text-4xl font-semibold leading-tight">{product.name}</h1>
+            <div className="rounded-2xl border border-taupe/15 bg-white p-4 sm:p-5 shadow-sm">
+              <p className="text-gold text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] mb-1.5">{product.brand}</p>
+              <h1 className="font-display text-[#171717] text-2xl sm:text-[30px] font-semibold leading-[1.12]">{product.name}</h1>
               {product.modelName && (
-                <p className="text-taupe text-sm mt-1 italic font-display">{product.modelName}</p>
+                <p className="text-[#5f5a54] text-xs mt-1.5 font-medium">{product.modelName}</p>
               )}
               {/* Badges row */}
               <div className="flex flex-wrap gap-2 mt-3">
@@ -2164,12 +2417,11 @@ export default function ProductDetailPage() {
                   <span className="text-xs bg-burgundy/10 text-burgundy border border-burgundy/20 px-3 py-1.5 rounded-full font-medium">Sold</span>
                 )}
               </div>
-            </div>
 
             {/* Main image + navigation arrows */}
-            <div className="relative group">
+            <div className="relative group mt-4">
               <div
-                className="aspect-[4/3] sm:aspect-square bg-taupe/5 rounded-2xl overflow-hidden border border-taupe/10 cursor-zoom-in shadow-luxury"
+                className="h-[360px] sm:h-[430px] lg:h-[440px] xl:h-[470px] bg-[#fbfaf8] rounded-xl overflow-hidden cursor-zoom-in"
                 onClick={() => images[activeImg] && setZoomOpen(true)}
               >
                 {images[activeImg] ? (
@@ -2177,7 +2429,7 @@ export default function ProductDetailPage() {
                     <img
                       src={images[activeImg].imageUrl}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                      className="w-full h-full object-contain group-hover:scale-[1.015] transition-transform duration-700"
                     />
                     <div className="absolute inset-0 flex items-end justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="bg-almost-black/60 backdrop-blur-sm text-ivory text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
@@ -2198,13 +2450,15 @@ export default function ProductDetailPage() {
                 <>
                   <button
                     onClick={e => { e.stopPropagation(); prevImg() }}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white border border-taupe/15 z-10"
+                    aria-label="Previous product image"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/95 rounded-full shadow-md flex items-center justify-center opacity-100 transition-opacity hover:bg-white border border-taupe/15 z-10"
                   >
                     <IconChevronLeft className="w-5 h-5 text-charcoal" />
                   </button>
                   <button
                     onClick={e => { e.stopPropagation(); nextImg() }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white border border-taupe/15 z-10"
+                    aria-label="Next product image"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/95 rounded-full shadow-md flex items-center justify-center opacity-100 transition-opacity hover:bg-white border border-taupe/15 z-10"
                   >
                     <IconChevronRight className="w-5 h-5 text-charcoal" />
                   </button>
@@ -2218,16 +2472,17 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className="flex gap-2.5 overflow-x-auto pb-1">
+            {images.length > 0 && (
+              <div className="flex gap-2.5 overflow-x-auto pt-3 pb-1" aria-label="Product image gallery">
                 {images.map((img, i) => (
                   <button key={i} onClick={() => setActiveImg(i)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                    aria-label={`View product image ${i + 1} of ${images.length}`}
+                    className={`flex-shrink-0 w-[72px] h-[60px] sm:w-[84px] sm:h-[68px] rounded-lg overflow-hidden border transition-all duration-200 ${
                       i === activeImg
-                        ? 'border-gold shadow-md shadow-gold/20 scale-105'
-                        : 'border-taupe/15 hover:border-taupe/40 opacity-70 hover:opacity-100'
+                        ? 'border-emerald shadow-sm ring-1 ring-emerald/20'
+                        : 'border-taupe/20 hover:border-gold opacity-80 hover:opacity-100'
                     }`}>
-                    <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={img.imageUrl} alt={`${product.name} thumbnail ${i + 1}`} className="w-full h-full object-contain bg-[#fbfaf8]" />
                   </button>
                 ))}
               </div>
@@ -2235,7 +2490,7 @@ export default function ProductDetailPage() {
 
             {/* INCLUSIONS chips */}
             {inclusions.length > 0 && (
-              <div>
+              <div className="border-t border-taupe/15 mt-4 pt-3">
                 <p className="text-taupe text-[10px] font-bold uppercase tracking-widest mb-3">Inclusions</p>
                 <div className="flex flex-wrap gap-2">
                   {inclusions.map(inc => (
@@ -2250,14 +2505,15 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             )}
+            </div>
 
             {/* PRODUCT SUMMARY grid */}
             {summaryFields.length > 0 && (
-              <div>
+              <div className="border border-taupe/15 rounded-xl p-4 bg-white">
                 <p className="text-taupe text-[10px] font-bold uppercase tracking-widest mb-3">Product Summary</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2">
                   {summaryFields.map(({ field, label, value }) => (
-                    <div key={field} className="flex items-start gap-2.5 bg-taupe/4 border border-taupe/10 rounded-xl px-3 py-3">
+                    <div key={field} className="flex flex-col items-center text-center gap-1.5 px-2 py-2">
                       <div className="w-7 h-7 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0 text-gold mt-0.5">
                         <SummaryIcon field={field} />
                       </div>
@@ -2273,7 +2529,7 @@ export default function ProductDetailPage() {
 
             {/* DESCRIPTION with Read more toggle */}
             {descFull && (
-              <div>
+              <div className="border border-taupe/15 rounded-xl p-4 bg-white">
                 <p className="text-taupe text-[10px] font-bold uppercase tracking-widest mb-2">Description</p>
                 <p className="text-charcoal text-sm leading-relaxed">{descText}</p>
                 {descFull.length > descMaxLen && (
@@ -2354,10 +2610,15 @@ export default function ProductDetailPage() {
                 )}
               </div>
             )}
+
+            {/* BUY FLOW INFOGRAPHIC */}
+            {hasAuction && !product.sold && (isActive || isPending) && (
+              <BuyFlowInfographic product={product} auction={auction} />
+            )}
           </div>
 
           {/* ── RIGHT COLUMN (sticky) ── */}
-          <div className="sticky top-24 self-start max-h-[calc(100vh-6rem)] overflow-y-auto space-y-0 animate-fade-up-delay-1 pb-6">
+          <div id="auction-panel" className="lg:sticky lg:top-20 self-start space-y-3 animate-fade-up-delay-1 pb-6">
 
             {/* Auction panel */}
             {hasAuction && !product.sold && isActive && (

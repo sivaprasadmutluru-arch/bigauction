@@ -6,8 +6,8 @@ export const fetchWallet = createAsyncThunk('wallet/fetch', async (_, { rejectWi
   catch (err) { return rejectWithValue(err.message) }
 })
 
-export const buyNow = createAsyncThunk('wallet/buyNow', async ({ productId, creditToApply, address }, { rejectWithValue }) => {
-  try { return (await api.post(`/products/${productId}/buy-now`, { creditToApply, ...address })).data }
+export const buyNow = createAsyncThunk('wallet/buyNow', async ({ productId, creditToApply, paymentMethod, cardAmount, address }, { rejectWithValue }) => {
+  try { return (await api.post(`/products/${productId}/buy-now`, { creditToApply, paymentMethod, cardAmount, ...address })).data }
   catch (err) { return rejectWithValue(err.message || 'Purchase failed') }
 })
 

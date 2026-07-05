@@ -46,7 +46,7 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const { user, loading, error } = useSelector(s => s.auth)
 
-  const [form, setForm]               = useState({ name: '', nickname: '', phone: '', email: '', password: '', confirmPassword: '' })
+  const [form, setForm]               = useState({ name: '', lastName: '', phone: '', email: '', password: '', confirmPassword: '' })
   const [showPw, setShowPw]           = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [agreed, setAgreed]           = useState(false)
@@ -63,7 +63,9 @@ export default function RegisterPage() {
     e.preventDefault()
     setPwError(null)
     if (form.password !== form.confirmPassword) { setPwError('Passwords do not match'); return }
-    const { confirmPassword, ...data } = form
+    const { confirmPassword, lastName, ...rest } = form
+    // Keep the current backend contract until its user schema is migrated.
+    const data = { ...rest, nickname: lastName }
     dispatch(register(data))
   }
 
@@ -136,7 +138,7 @@ export default function RegisterPage() {
               <div className="text-center mb-5">
                 <h2 className="font-display text-charcoal text-2xl font-semibold">Create your bidding profile</h2>
                 <p className="text-charcoal/55 text-sm mt-1.5 leading-relaxed">
-                  Your nickname will appear on live <span className="text-[#C6A972] font-medium">leaderboards</span>.<br />Your full details stay private.
+                  Create your account to join live <span className="text-[#C6A972] font-medium">auctions</span>.<br />Your personal details stay private.
                 </p>
               </div>
 
@@ -153,13 +155,9 @@ export default function RegisterPage() {
                   <input name="name" value={form.name} onChange={onChange} required placeholder="Enter your full name" className={inp} />
                 </Field>
 
-                <Field icon={<UserIcon />} right={
-                  <div className="w-5 h-5 rounded-full border border-[#C8BEB5] flex items-center justify-center" title="Your nickname is public. Your real name stays private.">
-                    <span className="text-[#C8BEB5] text-[10px] font-bold leading-none">?</span>
-                  </div>
-                }>
-                  <p className={lbl}>Nickname / Display Name</p>
-                  <input name="nickname" value={form.nickname} onChange={onChange} required placeholder="This is how others will see you on the leaderboard" className={inp} />
+                <Field icon={<UserIcon />}>
+                  <p className={lbl}>Last Name</p>
+                  <input name="lastName" value={form.lastName} onChange={onChange} required placeholder="Enter your last name" autoComplete="family-name" className={inp} />
                 </Field>
 
                 <Field icon={<PhoneIcon />}>

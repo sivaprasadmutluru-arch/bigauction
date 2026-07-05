@@ -5,6 +5,12 @@ import { fetchAuctions } from '../features/auctions/auctionsSlice'
 import { fetchFavourites } from '../features/favourites/favouritesSlice'
 import useFavourites from '../hooks/useFavourites'
 import HeroBanner from '../components/common/HeroBanner'
+import liveAuctionBannerImage from '../assets/live-auction-gavel-v2.png'
+import liveAuctionWatchImage from '../assets/liveauctionwatch.jpeg'
+import startingSoonBagImage from '../assets/starting-soon-bag-v2.png'
+import startingSoonBangleImage from '../assets/starting-soon-bangle-v2.png'
+import recentWinnersBagImage from '../assets/recent-winners-bag-brown-pattern-v4.png'
+import recentWinnersChainImage from '../assets/recent-winners-chain-v2.png'
 
 // ── Countdown hook ─────────────────────────────────────────────
 
@@ -33,37 +39,37 @@ const pad = n => String(n).padStart(2, '0')
 
 // ── Section header banner ──────────────────────────────────────
 
-function SectionBanner({ title, subtitle, leftImage, rightImage }) {
+function SectionBanner({ title, subtitle, leftImage, rightImage, leftImageContain }) {
   return (
     <div className="relative bg-emerald overflow-hidden">
       {/* Side decorations */}
-      {leftImage && (
-        <div className="absolute left-0 top-0 h-full w-36 overflow-hidden opacity-70">
-          <img src={leftImage} alt="" className="w-full h-full object-cover object-right" />
+      {leftImage && leftImageContain && (
+        <div className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 h-[70%] max-h-[220px] aspect-square rounded-2xl bg-ivory/95 shadow-lg p-3">
+          <img src={leftImage} alt="" className="w-full h-full object-contain" />
+        </div>
+      )}
+      {leftImage && !leftImageContain && (
+        <div className="absolute left-0 top-0 h-full w-[26%] max-w-[360px] overflow-hidden">
+          <img src={leftImage} alt="" className="w-full h-full object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-emerald" />
         </div>
       )}
       {rightImage && (
-        <div className="absolute right-0 top-0 h-full w-36 overflow-hidden opacity-70">
-          <img src={rightImage} alt="" className="w-full h-full object-cover object-left" />
+        <div className="absolute right-0 top-0 h-full w-[26%] max-w-[360px] overflow-hidden">
+          <img src={rightImage} alt="" className="w-full h-full object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-l from-transparent to-emerald" />
         </div>
       )}
 
       {/* Center text */}
-      <div className="absolute inset-0 pointer-events-none"
-           style={{
-             backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)',
-             backgroundSize: '24px 24px',
-           }} />
-
-      <div className="relative z-10 py-9 text-center px-4">
-        <div className="flex items-center justify-center gap-4 mb-2">
-          <div className="h-px w-14 bg-gold/50" />
-          <p className="text-gold font-bold text-sm tracking-[0.35em] uppercase">{title}</p>
-          <div className="h-px w-14 bg-gold/50" />
-        </div>
-        <p className="font-display text-ivory text-2xl sm:text-3xl font-semibold">{subtitle}</p>
+      <div className="relative z-10 py-8 sm:py-9 text-center">
+        <h2
+          className="text-gold text-2xl sm:text-[32px] font-bold uppercase leading-tight"
+          style={{ fontFamily: '"Times New Roman", Times, serif' }}
+        >
+          {title}
+        </h2>
+        <p className="text-ivory text-sm sm:text-base mt-1.5">{subtitle}</p>
       </div>
     </div>
   )
@@ -73,7 +79,7 @@ function SectionBanner({ title, subtitle, leftImage, rightImage }) {
 
 function Carousel({ children }) {
   const ref = useRef(null)
-  const scroll = dir => ref.current?.scrollBy({ left: dir * 300, behavior: 'smooth' })
+  const scroll = dir => ref.current?.scrollBy({ left: dir * 350, behavior: 'smooth' })
   return (
     <div className="relative">
       <div
@@ -84,8 +90,17 @@ function Carousel({ children }) {
         {children}
       </div>
       <button
+        onClick={() => scroll(-1)}
+        className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white border border-taupe/25 shadow-md flex items-center justify-center text-charcoal hover:border-emerald hover:text-emerald transition-colors"
+        aria-label="Scroll left"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <button
         onClick={() => scroll(1)}
-        className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-taupe/25 shadow-md flex items-center justify-center text-charcoal hover:border-emerald hover:text-emerald transition-colors"
+        className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white border border-taupe/25 shadow-md flex items-center justify-center text-charcoal hover:border-emerald hover:text-emerald transition-colors"
         aria-label="Scroll right"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -103,7 +118,6 @@ function ComingSoonCard({ auction, isFavourite, onToggleFavourite }) {
   const product  = auction.product
   const countdown = useCountdown(auction.scheduledStartTime)
   const image    = product?.imageUrls?.[0] || null
-  const brand    = product?.brand || product?.category?.name || 'Luxury'
   const ticketsSold  = auction.ticketsSold  || 0
   const ticketTarget = auction.ticketTarget || 0
   const ticketPct    = ticketTarget > 0 ? Math.min((ticketsSold / ticketTarget) * 100, 100) : 0
@@ -111,101 +125,74 @@ function ComingSoonCard({ auction, isFavourite, onToggleFavourite }) {
   const maxBid       = auction.reservePrice || auction.estimateHigh
 
   return (
-    <div className="flex-shrink-0 w-[330px] sm:w-[390px] bg-white rounded-[22px] overflow-hidden shadow-luxury hover:shadow-luxury-hover transition-all duration-300 flex flex-col border border-gold/20">
+    <div className="flex-shrink-0 w-[300px] sm:w-[330px] bg-[#fffdf9] border border-gold/30 rounded-2xl overflow-hidden shadow-luxury hover:shadow-luxury-hover transition-all duration-300 flex flex-col">
 
-      {/* Approved reference stage */}
-      <Link to={`/products/${product?.id}`} className="group block relative h-[300px] bg-[#f7efe4] overflow-hidden flex-shrink-0">
-        <div className="absolute inset-3 rounded-[18px] border border-gold/25 bg-[#fbf4ea] overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_28%,rgba(198,169,114,0.18),transparent_24%),linear-gradient(90deg,rgba(255,255,255,0.9),rgba(255,255,255,0.25)_52%,rgba(255,255,255,0.82))]" />
-
-          <div className="absolute left-5 top-5 z-20 inline-flex items-center gap-2 rounded-lg bg-emerald px-4 py-3 shadow-md">
-            <svg className="h-4 w-4 text-gold" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 8.25h16.5M5.25 5.25h13.5c.828 0 1.5.672 1.5 1.5v12c0 .828-.672 1.5-1.5 1.5H5.25c-.828 0-1.5-.672-1.5-1.5v-12c0-.828.672-1.5 1.5-1.5z" />
-            </svg>
-            <span className="text-ivory text-sm font-bold tracking-wide uppercase">Auctions Starting Soon</span>
-          </div>
-
-          <button
-            onClick={e => { e.preventDefault(); e.stopPropagation(); onToggleFavourite?.(auction.id) }}
-            className={`absolute right-5 top-5 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md border border-gold/20 transition-colors ${isFavourite ? 'text-burgundy' : 'text-gold hover:text-emerald'}`}
-            aria-label="Toggle favourite"
-          >
-            <svg className="w-6 h-6" fill={isFavourite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </button>
-
-          <div className="absolute left-7 top-[126px] z-10 max-w-[135px]">
-            <p className="font-display text-[2.05rem] leading-none tracking-[0.26em] uppercase text-gold/95 break-words">
-              {brand}
-            </p>
-          </div>
-
-          <div className="absolute right-5 bottom-0 h-[220px] w-[66%]">
-            {image
-              ? <img src={image} alt={product?.name} className="h-full w-full object-contain object-bottom drop-shadow-xl transition-transform duration-500 group-hover:scale-[1.03]" />
-              : <div className="h-full w-full flex items-center justify-center text-gold/25 text-6xl">◆</div>
-            }
+      {/* Top bar: countdown + heart */}
+      <div className="flex items-center justify-between px-4 pt-4">
+        <div className="flex items-center gap-1.5">
+          <div className="rounded-lg bg-emerald px-3 py-2 shadow-sm">
+          <p className="text-ivory/70 text-[9px] font-semibold uppercase tracking-wide">Auction starts in</p>
+          <p className="text-ivory text-[11px] font-bold font-mono mt-0.5">
+            {pad(countdown.dd)}d : {pad(countdown.hh)}h : {pad(countdown.mm)}m
+          </p>
           </div>
         </div>
+        <button
+          onClick={e => { e.stopPropagation(); onToggleFavourite?.(auction.id) }}
+          className={`w-9 h-9 rounded-full border border-gold/30 bg-white shadow-sm flex items-center justify-center transition-colors ${isFavourite ? 'text-burgundy' : 'text-gold hover:text-emerald'}`}
+          aria-label="Toggle favourite"
+        >
+          <svg className="w-4 h-4" fill={isFavourite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Image */}
+      <Link to={`/products/${product?.id}`} className="block relative h-52 mx-3 mt-2 rounded-xl bg-ivory overflow-hidden flex-shrink-0">
+        {image
+          ? <img src={image} alt={product?.name} className="w-full h-full object-contain p-5 scale-[0.84] hover:scale-[0.89] transition-transform duration-500" />
+          : <div className="w-full h-full flex items-center justify-center text-taupe/20 text-4xl">◆</div>
+        }
       </Link>
 
       {/* Body */}
       <div className="p-4 flex flex-col flex-1 gap-3">
         <Link to={`/products/${product?.id}`}>
-          <h3 className="font-display text-charcoal font-semibold text-lg leading-snug line-clamp-2 hover:text-emerald transition-colors">
+          <h3 className="font-display text-center text-charcoal font-semibold text-xl leading-snug line-clamp-2 hover:text-emerald transition-colors">
             {product?.name}
           </h3>
         </Link>
 
-        <div className="flex items-center justify-between rounded-lg border border-taupe/15 bg-ivory px-3 py-2">
-          <p className="text-taupe text-[10px] font-bold uppercase tracking-[0.18em]">Starts In</p>
-          <div className="flex items-center gap-1.5">
-            {[
-              ['D', countdown.dd],
-              ['H', countdown.hh],
-              ['M', countdown.mm],
-            ].map(([unit, value]) => (
-              <span key={unit} className="inline-flex items-baseline gap-0.5 rounded bg-white px-2 py-1 text-charcoal shadow-sm">
-                <strong className="font-mono text-xs">{pad(value)}</strong>
-                <span className="text-[8px] text-taupe">{unit}</span>
-              </span>
-            ))}
-          </div>
-        </div>
+        <div className="flex items-center justify-center gap-2 text-gold/70"><span className="h-px w-16 bg-gold/30" />◆<span className="h-px w-16 bg-gold/30" /></div>
 
         {/* Pricing table */}
-        <div className="space-y-1.5 text-xs">
-          {maxBid && (
-            <div className="flex items-center justify-between">
-              <span className="text-taupe">Max Bid Amount</span>
-              <span className="text-charcoal font-semibold">AED {Number(maxBid).toLocaleString()}</span>
-            </div>
-          )}
-          {buyNowPrice && (
-            <div className="flex items-center justify-between">
-              <span className="text-taupe">Buy Now Price</span>
-              <span className="text-charcoal font-semibold">AED {buyNowPrice.toLocaleString()}</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <span className="text-taupe">Ticket Price</span>
-            <span className="text-charcoal font-semibold">AED {Number(auction.ticketPrice || 0).toLocaleString()}</span>
+        <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="rounded-xl bg-emerald px-3 py-3 text-ivory border border-gold/30">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-gold">Maximum Bid Amount</p>
+            <p className="font-display text-xl mt-1">{maxBid ? `AED ${Number(maxBid).toLocaleString()}` : 'TBA'}</p>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-taupe">Tickets Sold</span>
-            <span className="text-charcoal font-semibold">{ticketsSold.toLocaleString()} / {ticketTarget.toLocaleString()}</span>
+          <div className="rounded-xl bg-[#fbf4e8] px-3 py-3 border border-gold/35">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-gold">Buy Now Price</p>
+            <p className="font-display text-xl text-gold mt-1">{buyNowPrice ? `AED ${buyNowPrice.toLocaleString()}` : 'TBA'}</p>
           </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 rounded-xl border border-taupe/15 bg-ivory/70 p-3 text-xs">
+          <div><p className="text-taupe text-[9px] uppercase">Auction Ticket Price</p><p className="font-semibold text-charcoal mt-1">AED {Number(auction.ticketPrice || 0).toLocaleString()}</p></div>
+          <div><p className="text-taupe text-[9px] uppercase">Tickets Sold</p><p className="font-semibold text-charcoal mt-1">{ticketsSold.toLocaleString()} / {ticketTarget.toLocaleString()}</p></div>
           <div className="w-full h-1 bg-taupe/15 rounded-full overflow-hidden">
             <div className="h-full bg-gold rounded-full transition-all duration-700" style={{ width: `${ticketPct}%` }} />
           </div>
+          <p className="text-right text-[10px] text-gold">{ticketPct.toFixed(1)}% sold</p>
         </div>
+
+        <p className="rounded-lg bg-gold/10 py-2 text-center text-[10px] text-taupe">Buy Now is available before the auction goes live.</p>
 
         {/* Buttons */}
         <div className="flex gap-2 mt-auto pt-1">
           <button
             onClick={() => navigate(`/products/${product?.id}`, { state: { autoTicket: true } })}
-            className="flex-1 flex items-center justify-center gap-1.5 border border-emerald text-emerald text-xs font-bold py-2.5 rounded hover:bg-emerald hover:text-ivory transition-colors uppercase tracking-wide"
+            className="flex-1 flex items-center justify-center gap-1.5 bg-emerald text-ivory text-xs font-bold py-3 rounded-lg hover:bg-emerald/90 transition-colors uppercase tracking-wide"
           >
             <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a3 3 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
@@ -215,7 +202,7 @@ function ComingSoonCard({ auction, isFavourite, onToggleFavourite }) {
           {buyNowPrice ? (
             <button
               onClick={() => navigate('/checkout', { state: { type: 'buynow', product, auction } })}
-              className="flex-1 bg-gold-gradient text-charcoal text-xs font-bold py-2.5 rounded hover:opacity-90 transition-opacity uppercase tracking-wide"
+              className="flex-1 bg-gold-gradient text-charcoal text-xs font-bold py-3 rounded-lg hover:opacity-90 transition-opacity uppercase tracking-wide"
             >
               Buy Now
             </button>
@@ -269,7 +256,7 @@ function LiveAuctionCard({ auction, isFavourite, onToggleFavourite }) {
       {/* Image */}
       <Link to={`/products/${product?.id}`} className="block relative h-44 bg-ivory overflow-hidden flex-shrink-0">
         {image
-          ? <img src={image} alt={product?.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+          ? <img src={image} alt={product?.name} className="w-full h-full object-contain p-5 scale-[0.84] hover:scale-[0.89] transition-transform duration-500" />
           : <div className="w-full h-full flex items-center justify-center text-taupe/20 text-4xl">◆</div>
         }
       </Link>
@@ -327,29 +314,27 @@ function WinnerCard({ auction }) {
     : '—'
 
   return (
-    <div className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-lg overflow-hidden shadow-luxury flex gap-0 flex-col border border-gold/15">
-      <div className="relative h-40 bg-ivory overflow-hidden flex-shrink-0">
+    <div className="flex-shrink-0 w-[280px] sm:w-[310px] bg-[#fffdf9] border border-gold/30 rounded-2xl overflow-hidden shadow-luxury flex gap-0 flex-col">
+      <div className="relative h-48 bg-ivory overflow-hidden flex-shrink-0">
         {image
-          ? <img src={image} alt={product?.name} className="w-full h-full object-cover" />
+          ? <img src={image} alt={product?.name} className="w-full h-full object-contain p-5 scale-[0.84]" />
           : <div className="w-full h-full flex items-center justify-center text-taupe/20 text-4xl">◆</div>
         }
-        <div className="absolute top-2 left-2 bg-emerald text-ivory text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wide">
-          Auction Result
+        <div className="absolute top-3 left-3 bg-emerald text-ivory text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide border border-gold/40">
+          ✓ Sold
         </div>
       </div>
-      <div className="p-3 space-y-1.5 text-xs">
-        <p className="font-display text-charcoal font-semibold text-base leading-snug line-clamp-2">{product?.name}</p>
-        <div className="flex justify-between">
-          <span className="text-taupe">Winner</span>
-          <span className="text-charcoal font-medium">{winnerDisplay}</span>
+      <div className="p-4 space-y-3 text-xs text-center">
+        <p className="font-display text-charcoal font-semibold text-lg leading-snug line-clamp-2">{product?.name}</p>
+        <div className="flex items-center justify-center gap-2 text-gold/70"><span className="h-px w-12 bg-gold/30" />◆<span className="h-px w-12 bg-gold/30" /></div>
+        <p><span className="text-taupe">Winner: </span><span className="text-emerald font-bold tracking-[0.18em] uppercase">{winnerDisplay}</span></p>
+        <div className="rounded-xl border border-gold/35 bg-[#fbf4e8] py-3">
+          <p className="text-emerald text-[9px] font-bold uppercase tracking-wider">Final Amount</p>
+          <p className="font-display text-gold text-2xl mt-1">AED {Number(auction.currentHighestBid || 0).toLocaleString()}</p>
         </div>
-        <div className="flex justify-between">
-          <span className="text-taupe">Final Amount</span>
-          <span className="text-charcoal font-semibold">AED {Number(auction.currentHighestBid || 0).toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-taupe">Completed On</span>
-          <span className="text-charcoal font-medium">{date}</span>
+        <div className="grid grid-cols-2 divide-x divide-gold/20 pt-1">
+          <div><p className="text-taupe text-[9px] uppercase">Tickets Sold</p><p className="text-charcoal font-semibold mt-1">{Number(auction.ticketsSold || 0).toLocaleString()} / {Number(auction.ticketTarget || 0).toLocaleString()}</p></div>
+          <div><p className="text-taupe text-[9px] uppercase">Completed On</p><p className="text-charcoal font-semibold mt-1">{date}</p></div>
         </div>
       </div>
     </div>
@@ -433,6 +418,7 @@ export default function HomePage() {
   // Pick decoration images from auction items
   const pendingImages = pendingAuctions.flatMap(a => a.product?.imageUrls || []).filter(Boolean)
   const liveImages    = liveAuctions.flatMap(a => a.product?.imageUrls || []).filter(Boolean)
+  const winnerImages  = recentWinners.flatMap(a => a.product?.imageUrls || []).filter(Boolean)
 
   return (
     <div className="bg-ivory min-h-screen">
@@ -445,11 +431,11 @@ export default function HomePage() {
         <section>
           <SectionBanner
             title="Auctions Starting Soon"
-            subtitle="Secure your spot before the auction begins"
-            leftImage={pendingImages[0]}
-            rightImage={pendingImages[1]}
+            subtitle="Secure your spot before the auction begins."
+            leftImage={startingSoonBagImage}
+            rightImage={startingSoonBangleImage}
           />
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 py-8 overflow-hidden">
+          <div className="max-w-[1500px] mx-auto px-3 sm:px-5 lg:px-6 py-8 overflow-hidden">
             <Carousel>
               {pendingAuctions.map(a => (
                 <ComingSoonCard
@@ -469,11 +455,11 @@ export default function HomePage() {
         <section>
           <SectionBanner
             title="Live Auctions"
-            subtitle="Place your bids and compete in real-time"
-            leftImage={liveImages[0]}
-            rightImage={liveImages[1]}
+            subtitle="Place your bids and compete in real-time."
+            leftImage={liveAuctionBannerImage}
+            rightImage={liveAuctionWatchImage}
           />
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 py-8 overflow-hidden">
+          <div className="max-w-[1500px] mx-auto px-3 sm:px-5 lg:px-6 py-8 overflow-hidden">
             <Carousel>
               {liveAuctions.map(a => (
                 <LiveAuctionCard
@@ -492,12 +478,13 @@ export default function HomePage() {
       {recentWinners.length > 0 && (
         <section id="winners">
           <SectionBanner
-            title="Auction Results"
-            subtitle="Real results. Real excitement"
-            leftImage={liveImages[0] || pendingImages[0]}
-            rightImage={liveImages[1] || pendingImages[1]}
+            title="Recent Winners"
+            subtitle="Real results. Real excitement."
+            leftImage={recentWinnersBagImage}
+            rightImage={recentWinnersChainImage}
           />
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 py-8 overflow-hidden">
+          <div className="max-w-[1500px] mx-auto px-3 sm:px-5 lg:px-6 py-8 overflow-hidden">
+            <p className="text-center text-[10px] text-taupe mb-5">Every auction is verified. Every result is final. Big Auction is committed to trust, fairness and transparency.</p>
             <Carousel>
               {recentWinners.map(a => (
                 <WinnerCard key={a.id} auction={a} />
@@ -509,13 +496,8 @@ export default function HomePage() {
 
       {/* ── HOW IT WORKS ─────────────────────────────────────── */}
       <section id="how-it-works" className="bg-white border-y border-taupe/10">
-        <SectionBanner
-          title="How Big Auction Works"
-          subtitle="Simple steps to join, bid, and win"
-          leftImage={pendingImages[2] || liveImages[0]}
-          rightImage={liveImages[2] || pendingImages[1]}
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <SectionBanner title="How Big Auction Works" subtitle="Simple steps. Premium experience." />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col lg:flex-row gap-10 items-start">
 
             {/* Steps */}
@@ -524,8 +506,9 @@ export default function HomePage() {
                 {HOW_STEPS.map((step, i) => (
                   <div key={step.num} className="flex sm:flex-col items-center sm:items-center flex-1 gap-3 sm:gap-0 sm:text-center">
                     {/* Icon */}
-                    <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-gold/30 bg-ivory flex items-center justify-center">
+                    <div className="relative flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-gold/40 bg-ivory flex items-center justify-center shadow-sm">
                       {step.icon}
+                      <span className="absolute -bottom-2 w-5 h-5 rounded-full bg-emerald text-ivory text-[10px] font-bold flex items-center justify-center">{step.num}</span>
                     </div>
                     {/* Connector arrow (between steps, horizontal on sm+) */}
                     {i < HOW_STEPS.length - 1 && (
@@ -536,8 +519,8 @@ export default function HomePage() {
                       </div>
                     )}
                     <div className="sm:mt-3 pb-2">
-                      <p className="text-charcoal text-sm font-bold">{step.num}. {step.title}</p>
-                      <p className="text-taupe text-xs mt-1 max-w-[130px] mx-auto leading-snug">{step.text}</p>
+                      <p className="text-charcoal text-xs font-bold uppercase">{step.title}</p>
+                      <p className="text-taupe text-xs mt-0.5 max-w-[100px] mx-auto leading-snug">{step.text}</p>
                     </div>
                   </div>
                 ))}
@@ -545,7 +528,7 @@ export default function HomePage() {
             </div>
 
             {/* New to auctions CTA */}
-            <div className="flex-shrink-0 lg:w-56 bg-ivory border border-taupe/20 rounded-2xl p-6 text-center">
+            <div className="flex-shrink-0 lg:w-56 bg-ivory border border-gold/25 rounded-2xl p-6 text-center shadow-sm">
               <p className="text-charcoal font-semibold text-sm mb-1">New to auctions?</p>
               <p className="text-taupe text-xs mb-4 leading-relaxed">Learn how it works in just 2 minutes.</p>
               <a

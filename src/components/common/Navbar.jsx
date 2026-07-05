@@ -10,7 +10,7 @@ const NAV_LINKS = [
   { label: 'Auctions',     to: '/auctions' },
   { label: 'How It Works', to: '/how-it-works' },
   { label: 'Winners',      to: '/winners' },
-  { label: 'About Us',     to: '/about' },
+  { label: 'Authenticity', to: '/about' },
   { label: 'Help',         to: '/help' },
 ]
 
@@ -43,17 +43,18 @@ export default function Navbar() {
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '?'
+  const publicDisplayName = user?.nickname || user?.name?.split(' ')[0] || 'Member'
 
   return (
     <Disclosure as="nav" className="bg-white border-b border-taupe/15 sticky top-0 z-50">
       {({ open }) => (
         <>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-20">
+            <div className="flex items-center justify-between h-16">
 
               {/* Logo */}
-              <Link to="/" className="flex-shrink-0 py-2">
-                <img src={logo} alt="Big Auction" className="h-14 sm:h-16 w-auto" />
+              <Link to="/" className="flex-shrink-0">
+                <img src={logo} alt="Big Auction" className="h-11 sm:h-12 w-auto" />
               </Link>
 
               {/* Desktop nav */}
@@ -87,6 +88,10 @@ export default function Navbar() {
 
                 {user ? (
                   <>
+                    <div className="hidden md:block text-right leading-tight">
+                      <p className="text-sm font-semibold text-emerald">Hello, {publicDisplayName}</p>
+                      <p className="text-[10px] text-taupe">Signed in privately</p>
+                    </div>
                     <Link to="/wallet" className="hidden sm:block text-sm text-charcoal font-medium hover:text-emerald transition-colors">
                       AED {wallet ? Number(wallet.balance).toLocaleString() : '0'}
                     </Link>
@@ -102,8 +107,8 @@ export default function Navbar() {
                       >
                         <Menu.Items className="absolute right-0 mt-2 w-48 bg-white border border-taupe/20 rounded-lg shadow-xl focus:outline-none overflow-hidden">
                           <div className="px-4 py-3 border-b border-taupe/20">
-                            <p className="text-charcoal text-sm font-medium truncate">{user.name}</p>
-                            <p className="text-taupe text-xs truncate">{user.email}</p>
+                            <p className="text-charcoal text-sm font-medium truncate">Hello, {publicDisplayName}</p>
+                            <p className="text-taupe text-xs">Private account</p>
                           </div>
                           {USER_MENU.map(item => (
                             <Menu.Item key={item.to}>
@@ -181,6 +186,10 @@ export default function Navbar() {
                 </div>
               ) : (
                 <>
+                  <div className="border-t border-taupe/20 px-3 pt-3 mt-2">
+                    <p className="text-sm font-semibold text-emerald">Hello, {publicDisplayName}</p>
+                    <p className="text-xs text-taupe">You are signed in privately</p>
+                  </div>
                   <div className="border-t border-taupe/20 pt-2 mt-2">
                     <div className="flex items-center justify-between px-3 py-2">
                       <span className="text-xs text-taupe">Wallet Balance</span>

@@ -16,11 +16,13 @@ api.interceptors.response.use(
   res => res.data,
   err => {
     const status = err.response?.status
-    if (status === 401 || status === 403) {
+    const url = err.config?.url || ''
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register')
+    if ((status === 401 || status === 403) && !isAuthEndpoint) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
-      return  // stop further processing
+      return new Promise(() => {})  // navigation is underway; never settle this promise
     }
     const message =
       err.response?.data?.message ||

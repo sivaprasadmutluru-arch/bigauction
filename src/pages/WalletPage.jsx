@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { fetchWallet } from '../features/wallet/walletSlice'
 import api from '../services/api'
 import Loader from '../components/common/Loader'
 
 const REASON_MAP = {
   TICKET_PURCHASE:      'Ticket purchase',
+  TICKET_REFUND:        'Ticket refund',
   AUCTION_LOSS_CREDIT:  'Auction loss credit',
   BUY_NOW_PURCHASE:     'Buy Now purchase',
   AUCTION_WIN_PURCHASE: 'Auction checkout',
@@ -32,9 +34,9 @@ const BANK_DETAILS = [
 ]
 
 // ── Add Funds Modal ──────────────────────────────────────────────────
-function AddFundsModal({ onClose, onSubmitted }) {
+function AddFundsModal({ onClose, onSubmitted, initialAmount = '' }) {
   const [step, setStep] = useState('details') // 'details' | 'form'
-  const [form, setForm] = useState({ amount: '', bankReference: '', userNote: '' })
+  const [form, setForm] = useState({ amount: initialAmount ? String(initialAmount) : '', bankReference: '', userNote: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
 
@@ -63,7 +65,7 @@ function AddFundsModal({ onClose, onSubmitted }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-almost-black/80">
       <div className="bg-white border border-taupe/15 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-charcoal font-semibold">Add Funds to Wallet</h3>
+          <h3 className="text-charcoal font-semibold">Top Up Wallet</h3>
           <button onClick={onClose} className="text-taupe hover:text-charcoal text-xl leading-none">×</button>
         </div>
 
@@ -158,9 +160,13 @@ function TransactionRow({ tx }) {
 // ── Main Page ────────────────────────────────────────────────────────
 export default function WalletPage() {
   const dispatch = useDispatch()
+  const location = useLocation()
+  const navigate = useNavigate()
   const { wallet, loading } = useSelector(s => s.wallet)
+  const returnTo = location.state?.returnTo
+  const requiredAmount = Number(location.state?.requiredAmount || 0)
 
-  const [showAddFunds, setShowAddFunds]     = useState(false)
+  const [showAddFunds, setShowAddFunds]     = useState(Boolean(location.state?.openTopUp))
   const [deposits, setDeposits]             = useState([])
   const [depositSuccess, setDepositSuccess] = useState(false)
   const [stmtTab, setStmtTab]               = useState('wallet')
@@ -194,29 +200,50 @@ export default function WalletPage() {
       <div className="relative overflow-hidden" style={{ backgroundColor: '#064C3B' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 lg:py-16">
-          <p className="text-ivory/60 text-xs uppercase tracking-widest mb-5">My Wallet</p>
-          <div className="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-16">
+          <p className="text-ivory/60 text-xs uppercase tracking-widest mb-1">My Wallet</p>
+          <p className="text-ivory/45 text-sm mb-4">Manage your balance, credits, refunds, and eligible payments.</p>
+          <div className="grid sm:grid-cols-2 gap-6 sm:gap-16">
             <div>
               <p className="text-ivory/50 text-xs mb-1 uppercase tracking-wider">Wallet Balance</p>
               <p className="text-ivory text-3xl sm:text-5xl font-bold font-display">AED {balance.toLocaleString('en-AE', { minimumFractionDigits: 2 })}</p>
-              <p className="text-ivory/40 text-xs mt-1">Withdrawable cash balance</p>
+              <p className="text-ivory/40 text-xs mt-1">Cash balance available for eligible payments.</p>
             </div>
             <div>
               <p className="text-xs mb-1 uppercase tracking-wider" style={{ color: 'rgba(198,169,114,0.7)' }}>Reward Credits</p>
               <p className="text-3xl sm:text-4xl font-bold font-display" style={{ color: '#C6A972' }}>AED {rewardCredits.toLocaleString('en-AE', { minimumFractionDigits: 2 })}</p>
-              <p className="text-xs mt-1" style={{ color: 'rgba(198,169,114,0.45)' }}>For auction tickets only</p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(198,169,114,0.55)' }}>Credits earned from refunds, rewards, or auction-related adjustments.</p>
             </div>
           </div>
           <button
             onClick={() => setShowAddFunds(true)}
             className="mt-6 bg-ivory text-emerald font-bold px-5 py-2.5 rounded-lg hover:bg-ivory/90 transition-colors text-sm"
           >
-            + Add Funds
+            + Top Up Wallet
           </button>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+
+        {returnTo && (
+          <div className="rounded-xl border border-emerald/25 bg-emerald/5 px-4 py-3 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-emerald text-sm font-semibold">Adding funds for {location.state?.returnLabel || 'your purchase'}</p>
+              <p className="text-taupe text-xs mt-0.5">Return to the item when you’re ready to continue.</p>
+            </div>
+            <button
+              onClick={() => navigate(returnTo, { state: { autoTicket: true } })}
+              className="flex-shrink-0 border border-emerald/30 text-emerald text-xs font-bold px-3.5 py-2 rounded-lg hover:bg-emerald/10 transition-colors"
+            >
+              Back to Purchase
+            </button>
+          </div>
+        )}
+
+        <div className="rounded-xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm text-charcoal">
+          <p className="font-semibold mb-1">Credit Usage Rules</p>
+          <p>Reward Credits cannot be withdrawn and may apply only to eligible purchases. They cannot be transferred, claimed as cash, or used for Buy Now or final item payments.</p>
+        </div>
 
         {/* Deposit request history */}
         {deposits.length > 0 && (
@@ -245,7 +272,7 @@ export default function WalletPage() {
           {/* Tab bar */}
           <div className="flex border-b border-taupe/15">
             {[
-              { key: 'wallet', label: 'Wallet Statement' },
+              { key: 'wallet', label: 'Wallet Activity' },
               { key: 'reward', label: 'Reward Credits' },
             ].map(t => (
               <button key={t.key} onClick={() => setStmtTab(t.key)}
@@ -279,7 +306,11 @@ export default function WalletPage() {
       </div>
 
       {showAddFunds && (
-        <AddFundsModal onClose={() => setShowAddFunds(false)} onSubmitted={onDepositSubmitted} />
+        <AddFundsModal
+          initialAmount={requiredAmount || ''}
+          onClose={() => setShowAddFunds(false)}
+          onSubmitted={onDepositSubmitted}
+        />
       )}
     </div>
   )
