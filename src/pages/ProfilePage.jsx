@@ -100,6 +100,18 @@ const IconMapPin = () => (
   </svg>
 )
 
+const IconLock = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+  </svg>
+)
+
+const IconLogout = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 -3H9m0 0 3-3m-3 3 3 3" />
+  </svg>
+)
+
 // ── Tiny label above field ─────────────────────────────────────────────────────
 
 const FieldLabel = ({ children }) => (
@@ -724,7 +736,7 @@ export default function ProfilePage() {
           {[
             { icon: <IconGavel />,    label: 'My Auctions',  sub: 'Ticketed auctions',            href: '#my-auctions' },
             { icon: <IconClipboard />,label: 'My Requests',  sub: 'Delivery, refunds & wishlist',  href: '#my-requests' },
-            { icon: <IconBag />,      label: 'My Orders',    sub: 'Buy Now purchases',             to: '/orders'        },
+            { icon: <IconBag />,      label: 'My Purchases', sub: 'Buy Now purchases',             to: '/orders'        },
             { icon: <IconHeart />,    label: 'Favourites',   sub: 'Saved auctions',                to: '/favourites'   },
             { icon: <IconDocument />, label: 'Statements',   sub: 'Wallet & credits',              to: '/wallet'       },
           ].map(({ icon, label, sub, to, href }) => {
@@ -982,32 +994,47 @@ export default function ProfilePage() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════════
-            ADDRESSES panel (collapsible)
+            ACCOUNT SETTINGS
         ══════════════════════════════════════════════════════════════ */}
-        {showAddresses && <AddressesPanel onClose={() => setShowAddresses(false)} />}
-
-        {/* ══════════════════════════════════════════════════════════════
-            BOTTOM NAVIGATION
-        ══════════════════════════════════════════════════════════════ */}
-        <div className="bg-white rounded-xl" style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
-          <div className="px-4 sm:px-6 lg:px-9 xl:px-10 py-3.5 lg:py-4 flex flex-wrap items-center justify-between gap-y-2 gap-x-0">
+        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
+          <DashboardBanner eyebrow="My Dashboard" title="Account Settings" />
+          <div>
             <button onClick={() => { setShowAddresses(v => !v); setTimeout(() => document.getElementById('addresses-anchor')?.scrollIntoView({ behavior: 'smooth' }), 50) }}
-              className="text-[12px] sm:text-[13px] text-taupe hover:text-charcoal transition-colors px-1 py-1">
-              Addresses
+              className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-7 lg:px-9 xl:px-10 py-4 hover:bg-[#F9F6F1] transition-colors text-left">
+              <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-taupe/70"
+                    style={{ background: '#F2E7D5', border: '1px solid rgba(138,129,118,0.18)' }}>
+                <IconMapPin />
+              </span>
+              <span className="flex-1 text-charcoal text-[13px] sm:text-[14px] font-semibold">Addresses</span>
+              <span className="text-taupe/35 flex-shrink-0"><IconChevronRight /></span>
             </button>
+            <div style={{ borderTop: '1px solid rgba(138,129,118,0.1)' }} />
             <button onClick={() => setShowChangePass(true)}
-              className="text-[12px] sm:text-[13px] text-taupe hover:text-charcoal transition-colors px-1 py-1">
-              Change Password
+              className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-7 lg:px-9 xl:px-10 py-4 hover:bg-[#F9F6F1] transition-colors text-left">
+              <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-taupe/70"
+                    style={{ background: '#F2E7D5', border: '1px solid rgba(138,129,118,0.18)' }}>
+                <IconLock />
+              </span>
+              <span className="flex-1 text-charcoal text-[13px] sm:text-[14px] font-semibold">Change Password</span>
+              <span className="text-taupe/35 flex-shrink-0"><IconChevronRight /></span>
             </button>
+            <div style={{ borderTop: '1px solid rgba(138,129,118,0.1)' }} />
             <button onClick={handleLogout}
-              className="text-[12px] sm:text-[13px] font-medium hover:opacity-70 transition-opacity px-1 py-1"
-              style={{ color: '#6E1F28' }}>
-              Logout
+              className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-7 lg:px-9 xl:px-10 py-4 hover:bg-[#F9F6F1] transition-colors text-left">
+              <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(110,31,40,0.08)', color: '#6E1F28' }}>
+                <IconLogout />
+              </span>
+              <span className="flex-1 text-[13px] sm:text-[14px] font-semibold" style={{ color: '#6E1F28' }}>Logout</span>
             </button>
           </div>
         </div>
 
+        {/* ══════════════════════════════════════════════════════════════
+            ADDRESSES panel (collapsible, sits directly under Account Settings)
+        ══════════════════════════════════════════════════════════════ */}
         <div id="addresses-anchor" />
+        {showAddresses && <AddressesPanel onClose={() => setShowAddresses(false)} />}
 
       </div>
 

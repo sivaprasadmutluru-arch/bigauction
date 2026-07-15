@@ -73,11 +73,11 @@ function FavouriteCard({ item, onRemove }) {
         <div className="border-t border-taupe/10 pt-2 flex items-end justify-between">
           <div>
             <p className="text-taupe text-[11px] uppercase tracking-wide mb-0.5">
-              {isLive ? 'Current Bid' : item.auctionStatus === 'PENDING' ? 'Buy Now Price' : 'Final Bid'}
+              {isLive ? 'Highest Offer Now' : item.auctionStatus === 'PENDING' ? 'Buy Now Price' : 'Final Amount'}
             </p>
             <p className={`font-semibold text-sm ${isLive ? 'text-gold font-bold' : 'text-charcoal'}`}>
               {isLive
-                ? (currentBid > 0 ? `AED ${currentBid.toLocaleString()}` : 'No bids yet')
+                ? (currentBid > 0 ? `AED ${currentBid.toLocaleString()}` : 'No offers yet')
                 : item.buyNowPrice
                 ? `AED ${Number(item.buyNowPrice).toLocaleString()}`
                 : currentBid > 0 ? `AED ${currentBid.toLocaleString()}` : '—'}

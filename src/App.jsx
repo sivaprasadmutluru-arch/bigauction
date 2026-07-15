@@ -3,6 +3,7 @@ import Navbar from './components/common/Navbar'
 import Footer from './components/common/Footer'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import NotificationToast from './components/common/NotificationToast'
+import WhatsAppButton from './components/common/WhatsAppButton'
 
 import HomePage           from './pages/HomePage'
 import AuctionsPage       from './pages/AuctionsPage'
@@ -74,6 +75,7 @@ export default function App() {
 
       <Footer />
       <NotificationToast />
+      <WhatsAppButton />
     </div>
   )
 }

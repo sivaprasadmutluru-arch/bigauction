@@ -3,15 +3,23 @@ import { useDispatch, useSelector } from 'react-redux'
 import { fetchAllOrders, updateOrderStatus } from '../../features/admin/adminSlice'
 import Loader from '../../components/common/Loader'
 
-const STATUSES = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+const STATUSES = ['PENDING', 'CONFIRMED', 'DELIVERED', 'CANCELLED']
 
 const STATUS_STYLE = {
   PENDING:   'bg-gold/10 text-gold',
   CONFIRMED: 'bg-emerald/10 text-emerald',
-  SHIPPED:   'bg-taupe/10 text-taupe',
   DELIVERED: 'bg-emerald/20 text-emerald',
   CANCELLED: 'bg-burgundy/10 text-burgundy',
 }
+
+const STATUS_HELP = {
+  PENDING: 'Awaiting payment or admin confirmation',
+  CONFIRMED: 'Paid or verified; prepare fulfilment',
+  DELIVERED: 'Completed delivery or handover',
+  CANCELLED: 'Cancelled or refund handled separately',
+}
+
+const statusLabel = status => (status || '—').replace(/_/g, ' ')
 
 export default function AdminOrdersPage() {
   const dispatch = useDispatch()
@@ -29,7 +37,10 @@ export default function AdminOrdersPage() {
     <div>
       <div className="flex items-center gap-3 mb-6">
         <div className="h-6 w-1 bg-emerald rounded-full" />
-        <h2 className="font-display text-charcoal text-2xl font-semibold">All Orders <span className="text-taupe text-lg font-normal">({orders.length})</span></h2>
+        <div>
+          <h2 className="font-display text-charcoal text-2xl font-semibold">All Orders <span className="text-taupe text-lg font-normal">({orders.length})</span></h2>
+          <p className="text-taupe text-xs mt-1">Use status deliberately: payment/admin confirmation, fulfilment, delivery, and cancellation are not the same step.</p>
+        </div>
       </div>
 
       <div className="bg-white border border-taupe/15 rounded-xl overflow-hidden">
@@ -65,8 +76,9 @@ export default function AdminOrdersPage() {
                       onChange={e => onStatusChange(o.id, e.target.value)}
                       className={`text-xs font-medium rounded-lg px-2 py-1 border-0 focus:outline-none focus:ring-1 focus:ring-gold cursor-pointer ${STATUS_STYLE[o.status] || ''}`}
                     >
-                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      {STATUSES.map(s => <option key={s} value={s}>{statusLabel(s)}</option>)}
                     </select>
+                    <p className="text-[10px] text-taupe mt-1">{STATUS_HELP[o.status] || statusLabel(o.status)}</p>
                   </td>
                 </tr>
               ))}

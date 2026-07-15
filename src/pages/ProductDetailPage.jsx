@@ -177,7 +177,7 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
 
   const fmt2 = n => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-  const startTime = (() => {
+  const eventTime = (() => {
     const src = isActive ? auction.scheduledEndTime : auction.scheduledStartTime
     if (!src) return '—'
     return new Date(src).toLocaleString('en-AE', {
@@ -185,6 +185,9 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
       hour: '2-digit', minute: '2-digit', hour12: true,
     }) + ' (GST)'
   })()
+
+  const auctionStateLabel = isActive ? 'Live Auction' : 'Starting Soon'
+  const eventTimeLabel = isActive ? 'End Time' : 'Start Time'
 
   const countdown = useCountdown(isActive ? auction.scheduledEndTime : auction.scheduledStartTime)
   const pad = n => String(n).padStart(2, '0')
@@ -309,12 +312,16 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
               {/* Product: large image left, info right */}
               <div className="flex gap-4">
                 {imgUrl
-                  ? <img src={imgUrl} alt={product.name} className="w-[140px] h-[160px] rounded-xl object-cover flex-shrink-0" />
-                  : <div className="w-[140px] h-[160px] rounded-xl bg-[#f3ede6] flex-shrink-0" />
+                  ? (
+                    <div className="w-[195px] h-[220px] rounded-xl bg-[#f3ede6] flex items-center justify-center flex-shrink-0 p-2">
+                      <img src={imgUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
+                    </div>
+                  )
+                  : <div className="w-[195px] h-[220px] rounded-xl bg-[#f3ede6] flex-shrink-0" />
                 }
                 <div className="flex flex-col justify-start pt-1 min-w-0 flex-1">
                   <p className="text-[#c8873a] text-[11px] font-bold uppercase tracking-widest mb-1">{product.brand}</p>
-                  <p className="text-[#1a1a1a] font-display font-bold text-[22px] leading-tight mb-1">{product.name}</p>
+                  <p className="text-[#1a1a1a] font-bold text-[19px] leading-tight mb-1" style={{ fontFamily: '"Times New Roman", Times, serif' }}>{product.name}</p>
                   {product.modelName && (
                     <p className="text-[#999] text-xs mb-3">{product.modelName}</p>
                   )}
@@ -325,38 +332,36 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
                       Live Now
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 border border-[#bbb] text-[#444] text-[10px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full w-fit">
-                      <svg className="w-3 h-3 text-[#666]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <span className="inline-flex items-center gap-1.5 border border-emerald/30 bg-emerald/10 text-[#1a1a1a] text-[10px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full w-fit">
+                      <svg className="w-3 h-3 text-emerald" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                       </svg>
                       Starts Soon
                     </span>
                   )}
+
+                  {/* "Auction starts in" + countdown boxes — beside the image */}
+                  <p className="text-[#888] text-xs mt-3 mb-2">{isActive ? 'Auction ends in' : 'Auction starts in'}</p>
+                  <div className="flex gap-1 min-w-0">
+                    {[['DAYS', pad(countdown.dd)], ['HRS', pad(countdown.hh)], ['MINS', pad(countdown.mm)], ['SECS', pad(countdown.ss)]].map(([unit, val]) => (
+                      <div key={unit} className="flex-1 min-w-0 border border-[#e3d5c4] rounded-lg py-1.5 flex flex-col items-center bg-[#f3ede6]">
+                        <span className="text-[#1a1a1a] font-bold text-base tabular-nums leading-none">{val}</span>
+                        <span className="text-[#8a7660] text-[7px] font-semibold uppercase mt-1 tracking-normal">{unit}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* "Auction starts in" + countdown boxes */}
-              <div>
-                <p className="text-[#888] text-xs mb-2.5">{isActive ? 'Auction ends in' : 'Auction starts in'}</p>
-                <div className="flex gap-2">
-                  {[['DAYS', pad(countdown.dd)], ['HRS', pad(countdown.hh)], ['MINS', pad(countdown.mm)], ['SECS', pad(countdown.ss)]].map(([unit, val]) => (
-                    <div key={unit} className="flex-1 border border-[#e8e2da] rounded-lg py-2.5 flex flex-col items-center bg-white">
-                      <span className="text-[#1a1a1a] font-bold text-2xl tabular-nums leading-none">{val}</span>
-                      <span className="text-[#999] text-[9px] font-semibold uppercase mt-1 tracking-wide">{unit}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Info rows: icon + label + value, no card border */}
-              <div className="space-y-3.5">
+              {/* Info rows: icon + label + value, bordered card */}
+              <div className="border border-[#e8e2da] rounded-xl px-4 py-3.5 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[#888] text-sm flex items-center gap-2"><IcoTag />Auction Type</span>
-                  <span className="text-[#1a1a1a] text-sm font-semibold">Live Auction</span>
+                  <span className="text-[#1a1a1a] text-sm font-semibold">{auction.auctionType || 'Live Auction'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#888] text-sm flex items-center gap-2"><IcoClock />Start Time</span>
-                  <span className="text-[#1a1a1a] text-sm font-semibold">{startTime}</span>
+                  <span className="text-[#888] text-sm flex items-center gap-2"><IcoClock />{eventTimeLabel}</span>
+                  <span className="text-[#1a1a1a] text-sm font-semibold">{eventTime}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#888] text-sm flex items-center gap-2"><IcoTimer />Estimated Duration</span>
@@ -371,32 +376,29 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
                 </svg>
                 <div>
                   <p className="text-[#1a1a1a] text-[13px] font-semibold">One ticket per user for this auction.</p>
-                  <p className="text-[#888] text-xs mt-1 leading-relaxed">The ticket gives you the right to place bids when the live auction begins.</p>
+                  <p className="text-[#888] text-xs mt-1 leading-relaxed">The ticket lets you join the live auction and place offers.</p>
                 </div>
               </div>
 
-              {/* Wallet Balance + Reward Credits — two boxes */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Wallet Balance + Reward Credits — single bordered card, split by divider */}
+              <div className="border border-[#e8e2da] rounded-xl px-4 py-3 flex items-stretch">
                 {/* Wallet Balance */}
-                <div className="border border-[#e8e2da] rounded-xl px-4 py-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <IcoWallet />
-                      <span className="text-[#666] text-xs">Wallet Balance</span>
-                    </div>
+                <div className="flex-1 pr-4">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <IcoWallet />
+                    <span className="text-[#666] text-xs">Wallet Balance</span>
                     <svg className="w-3.5 h-3.5 text-[#bbb]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4M12 16h.01"/>
                     </svg>
                   </div>
                   <p className="text-[#1a1a1a] font-bold text-[15px]">{currency} {fmt2(walletBal)}</p>
                 </div>
+                <span className="w-px bg-[#e8e2da]" />
                 {/* Reward Credits */}
-                <div className="border border-[#e8e2da] rounded-xl px-4 py-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <IcoStar className="w-4 h-4" />
-                      <span className="text-[#666] text-xs">Reward Credits</span>
-                    </div>
+                <div className="flex-1 pl-4">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <IcoStar className="w-4 h-4" />
+                    <span className="text-[#666] text-xs">Reward Credits</span>
                     <svg className="w-3.5 h-3.5 text-[#bbb]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4M12 16h.01"/>
                     </svg>
@@ -428,20 +430,25 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
           {step === 2 && (
             <div className="p-5 space-y-5">
 
-              {/* Mini product summary — cream bg, no border */}
-              <div className="flex items-center gap-3 bg-[#f8f3ec] rounded-xl px-4 py-3">
-                {imgUrl
-                  ? <img src={imgUrl} alt={product.name} className="w-[52px] h-[52px] rounded-lg object-cover flex-shrink-0" />
-                  : <div className="w-[52px] h-[52px] rounded-lg bg-[#e8e2da] flex-shrink-0" />
-                }
-                <div className="flex-1 min-w-0">
-                  <p className="text-[#1a1a1a] font-bold text-[13px] truncate">{product.name}</p>
-                  <p className="text-[#888] text-xs">{product.modelName || product.brand}</p>
+              {/* Mini product summary — plain, no card bg */}
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  {imgUrl
+                    ? <img src={imgUrl} alt={product.name} className="w-[90px] h-[80px] rounded-lg object-cover flex-shrink-0" />
+                    : <div className="w-[90px] h-[80px] rounded-lg bg-[#e8e2da] flex-shrink-0" />
+                  }
+                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                    <div>
+                      <p className="text-[#1a1a1a] font-bold text-[15px] truncate" style={{ fontFamily: '"Times New Roman", Times, serif' }}>{product.name}</p>
+                      <p className="text-[#888] text-xs mt-0.5">{product.modelName || product.brand}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#888] text-sm">Ticket Price</span>
+                      <span className="text-emerald font-bold text-sm">{currency} {ticketPrice.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0 ml-2">
-                  <p className="text-[#888] text-[10px] mb-0.5">Ticket Price</p>
-                  <p className="text-[#1a1a1a] font-bold text-[13px]">{currency} {ticketPrice.toLocaleString()}</p>
-                </div>
+                <div className="border-t border-[#ece6de]" />
               </div>
 
               {/* Payment options */}
@@ -519,9 +526,11 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
                             <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4M12 16h.01"/>
                           </svg>
                           <p className="text-[#999] text-[10px]">
-                            {hasPartialCredits
-                              ? 'Partial credit use is not supported. Credits must cover the full ticket price.'
-                              : 'Reward Credits can only be used for auction tickets.'}
+                            {canUseCredits
+                              ? 'Reward Credits can be used for this auction ticket.'
+                              : hasPartialCredits
+                                ? 'Insufficient Reward Credits for this ticket.'
+                                : 'Reward Credits can only be used for auction tickets.'}
                           </p>
                         </div>
                       </div>
@@ -651,8 +660,8 @@ function BuyTicketModal({ auction, product, wallet, onClose, onCardPayment }) {
                   </div>
                   <div className="border-t border-[#ece6de] divide-y divide-[#ece6de]">
                     {[
-                      { ico: <IcoTag />,      label: 'Auction Type', value: 'Live Auction' },
-                      { ico: <IcoClock />,    label: 'Start Time',   value: startTime },
+                      { ico: <IcoTag />,      label: 'Auction Status', value: auctionStateLabel },
+                      { ico: <IcoClock />,    label: eventTimeLabel,   value: eventTime },
                       { ico: <IcoTicketSm />, label: 'Ticket Price', value: `${currency} ${ticketPrice.toLocaleString()}` },
                       { ico: <IcoDoc />,      label: 'Ticket Status', value: null },
                     ].map(({ ico, label, value }) => (
@@ -938,7 +947,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
           {liveBidderName && currentBid > 0 ? (
             <p className="text-ivory/80 text-[11px] leading-tight">by {liveBidderName}<br />{liveBidTime ? timeAgo(liveBidTime) : ''}</p>
           ) : (
-            <p className="text-ivory/40 text-[10px] leading-none">No bids yet</p>
+            <p className="text-ivory/40 text-[10px] leading-none">No offers yet</p>
           )}
         </div>
 
@@ -1070,7 +1079,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
                 className="w-full bg-emerald text-ivory font-bold py-3.5 rounded-xl hover:bg-emerald/90 disabled:opacity-50 transition-colors btn-shimmer flex items-center justify-center gap-2"
               >
                 <IconTicket className="w-4 h-4" />
-                {loading ? 'Processing…' : `Buy a Ticket — AED ${Number(auction.ticketPrice || 0).toLocaleString()}`}
+                {loading ? 'Processing…' : `Buy Auction Ticket — AED ${Number(auction.ticketPrice || 0).toLocaleString()}`}
               </button>
             </div>
           )}
@@ -1176,7 +1185,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
               {/* MANUAL BID tab */}
               {activeTab === 'manual' && (
                 <div className="p-4 space-y-4">
-                  <p className="text-taupe text-xs">Enter a specific bid amount manually. Must be at least AED {minNextBid.toLocaleString()}.</p>
+                  <p className="text-taupe text-xs">Enter a specific offer amount manually. Must be at least AED {minNextBid.toLocaleString()}.</p>
                   <div className="flex gap-2 items-center">
                     <input
                       type="number"
@@ -1194,7 +1203,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
                       disabled={loading || !bidAmount}
                       className="w-full bg-emerald text-ivory font-bold py-3.5 rounded-xl hover:bg-emerald/90 disabled:opacity-50 transition-colors btn-shimmer uppercase tracking-wider text-sm"
                     >
-                      {loading ? 'Processing…' : 'Place Bid'}
+                      {loading ? 'Processing…' : 'Place Offer'}
                     </button>
                   </form>
                 </div>
@@ -1606,7 +1615,7 @@ function PendingAuctionPanel({ auction, product }) {
           >
             <div className="flex items-center gap-2">
               <IconTicket className="w-4 h-4 flex-shrink-0" />
-              <span className="font-bold text-sm tracking-wider uppercase">{loading ? 'Processing…' : 'Buy a Ticket'}</span>
+              <span className="font-bold text-sm tracking-wider uppercase">{loading ? 'Processing…' : 'Buy Auction Ticket'}</span>
             </div>
             <span className="text-ivory/60 text-xs mt-0.5">AED {Number(auction.ticketPrice || 0).toLocaleString()} entry</span>
           </button>
@@ -1625,7 +1634,7 @@ function PendingAuctionPanel({ auction, product }) {
           >
             <div className="flex items-center gap-2">
               <IconTicket className="w-4 h-4 flex-shrink-0" />
-              <span className="font-bold text-sm tracking-wider uppercase">Buy a Ticket</span>
+              <span className="font-bold text-sm tracking-wider uppercase">Buy Auction Ticket</span>
             </div>
             <span className="text-ivory/60 text-xs mt-0.5">Sign in to join</span>
           </button>
@@ -2183,11 +2192,11 @@ function BuyFlowInfographic({ product, auction }) {
 
       {/* STEP 2 — branch */}
       <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        <StepCard step={2} title="Buy a Ticket" accent="emerald">
+        <StepCard step={2} title="Buy Auction Ticket" accent="emerald">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <IconTicket className="w-4 h-4 text-emerald flex-shrink-0" />
-              <span className="text-charcoal text-xs font-semibold">Join the live auction &amp; place bids</span>
+              <span className="text-charcoal text-xs font-semibold">Join the live auction &amp; place offers</span>
             </div>
             <p className="text-taupe text-[11px] leading-relaxed">Pay with Wallet, Reward Credits, or Card.</p>
           </div>
@@ -2218,7 +2227,7 @@ function BuyFlowInfographic({ product, auction }) {
           )}
         </StepCard>
       </div>
-      <p className="text-center text-taupe/70 text-[11px] mt-2">Choose to join the live bidding, or buy the item outright.</p>
+      <p className="text-center text-taupe/70 text-[11px] mt-2">Choose to join the live auction, or buy the item outright.</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <DownArrow />
@@ -2232,7 +2241,7 @@ function BuyFlowInfographic({ product, auction }) {
             <span className="w-5 h-5 rounded-full bg-emerald/15 flex items-center justify-center flex-shrink-0">
               <IconCheck className="w-3 h-3 text-emerald" />
             </span>
-            <span className="text-charcoal text-xs">You're ready to bid when the auction goes live.</span>
+            <span className="text-charcoal text-xs">You're ready to place offers when the auction goes live.</span>
           </div>
         </StepCard>
         <StepCard step={3} title="Item Secured" accent="gold">
@@ -2262,7 +2271,7 @@ function BuyFlowInfographic({ product, auction }) {
           onClick={() => startPurchase('ticket')}
           className="flex-1 bg-emerald text-ivory font-bold text-xs uppercase tracking-wider py-3 rounded-xl hover:bg-emerald/90 transition-colors"
         >
-          Buy a Ticket
+          Buy Auction Ticket
         </button>
         {hasBuyNow && (
           <button
@@ -2351,7 +2360,7 @@ export default function ProductDetailPage() {
     hasAuction ? 'AUCTION' : null
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#faf6ef]">
 
       {/* Image zoom lightbox */}
       {zoomOpen && images[activeImg] && (
@@ -2390,7 +2399,7 @@ export default function ProductDetailPage() {
           <div className="space-y-3 animate-fade-up">
 
             {/* Brand / Title / Badges (at top of left column) */}
-            <div className="rounded-2xl border border-taupe/15 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="rounded-2xl border border-taupe/15 bg-[#faf6ef] p-4 sm:p-5 shadow-sm">
               <p className="text-gold text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] mb-1.5">{product.brand}</p>
               <h1 className="font-display text-[#171717] text-2xl sm:text-[30px] font-semibold leading-[1.12]">{product.name}</h1>
               {product.modelName && (

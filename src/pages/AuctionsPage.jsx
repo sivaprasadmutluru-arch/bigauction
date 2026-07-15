@@ -17,7 +17,7 @@ const FILTERS = [
 const SORT_OPTIONS = [
   { label: 'Newest First',    value: 'newest' },
   { label: 'Ending Soon',     value: 'ending' },
-  { label: 'Highest Bid',     value: 'highestBid' },
+  { label: 'Highest Offer',   value: 'highestBid' },
   { label: 'Lowest Ticket',   value: 'lowestTicket' },
 ]
 

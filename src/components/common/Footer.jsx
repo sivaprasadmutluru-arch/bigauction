@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import logo from '../../assets/bid-auction.png'
+import logo from '../../assets/big-auction-logo.png'
 
 const FOOTER_COLS = [
   {
@@ -110,7 +110,7 @@ export default function Footer() {
 
           {/* Brand column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-1">
-            <img src={logo} alt="Big Auction" className="h-10 w-auto mb-3" />
+            <img src={logo} alt="Big Auction" className="h-12 w-auto mb-3" />
             <p className="text-taupe text-xs leading-relaxed max-w-[200px]">
               The UAE's trusted platform for premium luxury auctions. Transparent, secure and exciting.
             </p>

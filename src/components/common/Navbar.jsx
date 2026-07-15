@@ -1,5 +1,5 @@
 import { Fragment, useEffect } from 'react'
-import logo from '../../assets/bid-auction.png'
+import logo from '../../assets/big-auction-logo.png'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Disclosure, Menu, Transition } from '@headlessui/react'
@@ -50,11 +50,11 @@ export default function Navbar() {
       {({ open }) => (
         <>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
+            <div className="flex items-center justify-between h-[70px]">
 
               {/* Logo */}
-              <Link to="/" className="flex-shrink-0">
-                <img src={logo} alt="Big Auction" className="h-11 sm:h-12 w-auto" />
+              <Link to="/" className="flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-emerald/40 rounded">
+                <img src={logo} alt="Big Auction" className="h-14 sm:h-16 w-auto" />
               </Link>
 
               {/* Desktop nav */}

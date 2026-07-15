@@ -18,7 +18,7 @@ const EyeIcon = ({ open }) => (
 
 const FEATURES = [
   { title: 'Verified Luxury Items',  sub: 'Every item is 100% authentic.',           icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/> },
-  { title: 'Transparent Auctions',   sub: 'Fair bidding. Real-time updates.',        icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/> },
+  { title: 'Transparent Auctions',   sub: 'Clear offers. Real-time updates.',        icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/> },
   { title: 'Secure & Private',       sub: 'Your data is encrypted and protected.',   icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/> },
   { title: 'UAE Wide Delivery',      sub: 'Fast and insured delivery across UAE.',   icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/> },
 ]
@@ -26,7 +26,7 @@ const FEATURES = [
 const TRUST = [
   { title: 'Secure Payments',     sub: 'Your transactions are 100% secure.',          icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/> },
   { title: 'Verified Platform',   sub: 'Trusted by thousands of luxury lovers.',      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0"/> },
-  { title: 'Fair & Transparent',  sub: 'Every bid is real and visible in real-time.', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/> },
+  { title: 'Fair & Transparent',  sub: 'Every offer is recorded in real time.', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/> },
   { title: 'Proudly in UAE',      sub: 'Local support and fast delivery.',             icon: <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></> },
 ]
 
@@ -46,7 +46,7 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const { user, loading, error } = useSelector(s => s.auth)
 
-  const [form, setForm]               = useState({ name: '', lastName: '', phone: '', email: '', password: '', confirmPassword: '' })
+  const [form, setForm]               = useState({ name: '', nickname: '', phone: '', email: '', password: '', confirmPassword: '' })
   const [showPw, setShowPw]           = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [agreed, setAgreed]           = useState(false)
@@ -63,9 +63,7 @@ export default function RegisterPage() {
     e.preventDefault()
     setPwError(null)
     if (form.password !== form.confirmPassword) { setPwError('Passwords do not match'); return }
-    const { confirmPassword, lastName, ...rest } = form
-    // Keep the current backend contract until its user schema is migrated.
-    const data = { ...rest, nickname: lastName }
+    const { confirmPassword, ...data } = form
     dispatch(register(data))
   }
 
@@ -98,7 +96,7 @@ export default function RegisterPage() {
             Join exclusive<br />luxury auctions
           </h1>
           <p className="text-charcoal/65 text-sm mb-6 leading-relaxed">
-            Browse freely. Register only when you're ready to bid or buy.
+            Browse freely. Register when you're ready to join an auction or buy.
           </p>
 
           <div className="space-y-4 mb-5">
@@ -136,7 +134,7 @@ export default function RegisterPage() {
             <div className="bg-white rounded-2xl border border-[#E2D8CC] shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 sm:p-7">
 
               <div className="text-center mb-5">
-                <h2 className="font-display text-charcoal text-2xl font-semibold">Create your bidding profile</h2>
+                <h2 className="font-display text-charcoal text-2xl font-semibold">Create Account</h2>
                 <p className="text-charcoal/55 text-sm mt-1.5 leading-relaxed">
                   Create your account to join live <span className="text-[#C6A972] font-medium">auctions</span>.<br />Your personal details stay private.
                 </p>
@@ -156,8 +154,8 @@ export default function RegisterPage() {
                 </Field>
 
                 <Field icon={<UserIcon />}>
-                  <p className={lbl}>Last Name</p>
-                  <input name="lastName" value={form.lastName} onChange={onChange} required placeholder="Enter your last name" autoComplete="family-name" className={inp} />
+                  <p className={lbl}>Nickname / Display Name</p>
+                  <input name="nickname" value={form.nickname} onChange={onChange} required placeholder="Shown on auction leaderboards" autoComplete="nickname" className={inp} />
                 </Field>
 
                 <Field icon={<PhoneIcon />}>
@@ -198,7 +196,7 @@ export default function RegisterPage() {
 
                 <button type="submit" disabled={loading || !agreed}
                   className="w-full bg-emerald text-ivory font-semibold py-3 rounded-xl hover:bg-emerald/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 tracking-[0.1em] text-sm">
-                  {loading ? 'Creating profile…' : <>CREATE BIDDING PROFILE <span>→</span></>}
+                  {loading ? 'Creating account…' : <>CREATE ACCOUNT <span>→</span></>}
                 </button>
 
                 <p className="text-center text-charcoal/55 text-sm">

@@ -106,12 +106,17 @@ export default function AdminDepositsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="h-6 w-1 bg-emerald rounded-full" />
-          <h2 className="font-display text-charcoal text-2xl font-semibold">
-            Deposit Requests
-            {pendingCount > 0 && (
-              <span className="ml-2 bg-burgundy text-ivory text-xs font-bold px-2 py-0.5 rounded-full align-middle">{pendingCount}</span>
-            )}
-          </h2>
+          <div>
+            <h2 className="font-display text-charcoal text-2xl font-semibold">
+              Wallet Deposit Requests
+              {pendingCount > 0 && (
+                <span className="ml-2 bg-burgundy text-ivory text-xs font-bold px-2 py-0.5 rounded-full align-middle">{pendingCount}</span>
+              )}
+            </h2>
+            <p className="text-taupe text-xs mt-1">
+              Bank-transfer wallet top-ups only. Refunds, delivery issues, and support requests should remain in their own workflows.
+            </p>
+          </div>
         </div>
         <div className="flex gap-1">
           {['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map(s => (
@@ -134,7 +139,7 @@ export default function AdminDepositsPage() {
                   <th className="px-4 py-3 text-taupe font-medium">User</th>
                   <th className="px-4 py-3 text-taupe font-medium">Amount</th>
                   <th className="px-4 py-3 text-taupe font-medium hidden sm:table-cell">Bank Reference</th>
-                  <th className="px-4 py-3 text-taupe font-medium hidden md:table-cell">Note</th>
+                  <th className="px-4 py-3 text-taupe font-medium hidden md:table-cell">User/Admin Note</th>
                   <th className="px-4 py-3 text-taupe font-medium hidden lg:table-cell">Date</th>
                   <th className="px-4 py-3 text-taupe font-medium">Status</th>
                   <th className="px-4 py-3 text-taupe font-medium text-right">Actions</th>
@@ -161,6 +166,9 @@ export default function AdminDepositsPage() {
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLE[d.status] || ''}`}>
                         {d.status}
                       </span>
+                      <p className="text-[10px] text-taupe mt-1">
+                        {d.status === 'PENDING' ? 'Needs bank reference review' : d.status === 'APPROVED' ? 'Wallet credited' : 'Rejected, no wallet credit'}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">

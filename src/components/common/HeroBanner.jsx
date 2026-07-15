@@ -5,12 +5,14 @@ import luxuryWatchImg from '../../assets/hero-luxury-watch-v3.png'
 import luxuryBagImg from '../../assets/hero-luxury-bag-v3.png'
 import luxuryJewelleryImg from '../../assets/hero-luxury-jewellery-v3.png'
 import luxuryRingImg from '../../assets/hero-luxury-ring-v3.png'
+import luxuryHandbagImg from '../../assets/hero-luxury-handbag-v1.png'
+import luxuryGoldJewelleryImg from '../../assets/hero-luxury-gold-jewellery-v1.png'
 
 const HERO_SLIDES = [
   {
     image: luxuryWatchImg, label: 'Watches', position: 'center', theme: 'light',
     title: ['Exclusive luxury.', 'Unbeatable excitement.'],
-    copy: ['Premium timepieces. Transparent auctions.', 'Your next luxury find is here.'],
+    copy: ['Luxury bags, watches, jewellery and rare finds.', 'Transparent auctions for your next statement piece.'],
   },
   {
     image: luxuryBagImg, label: 'Bags', position: 'center', theme: 'dark',
@@ -27,6 +29,16 @@ const HERO_SLIDES = [
     title: ['A timeless promise.', 'Crafted to captivate.'],
     copy: ['Exceptional rings. Verified authenticity.', 'Discover brilliance made to last.'],
   },
+  {
+    image: luxuryHandbagImg, label: 'Handbags', position: 'center', theme: 'light',
+    title: ['Quiet luxury.', 'Ready for auction.'],
+    copy: ['Curated handbags. Verified provenance.', 'Find statement pieces with confidence.'],
+  },
+  {
+    image: luxuryGoldJewelleryImg, label: 'Gold Jewellery', position: 'center', theme: 'light',
+    title: ['Golden details.', 'Lasting value.'],
+    copy: ['Fine jewellery with polished presence.', 'Bid on pieces made to be remembered.'],
+  },
 ]
 
 const TRUST = [
@@ -36,8 +48,8 @@ const TRUST = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
       </svg>
     ),
-    line1: '100% Authentic',
-    line2: 'Luxury Items',
+    line1: 'Authentic',
+    line2: 'Verified luxury',
   },
   {
     icon: (
@@ -46,7 +58,7 @@ const TRUST = [
       </svg>
     ),
     line1: 'Transparent',
-    line2: 'Auctions',
+    line2: 'Final results',
   },
   {
     icon: (
@@ -54,8 +66,8 @@ const TRUST = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
       </svg>
     ),
-    line1: 'Secure Payments',
-    line2: '& Your Privacy',
+    line1: 'Private',
+    line2: 'Secure payment',
   },
   {
     icon: (
@@ -63,8 +75,8 @@ const TRUST = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
       </svg>
     ),
-    line1: 'Fast & Insured',
-    line2: 'Delivery Across UAE',
+    line1: 'Insured',
+    line2: 'UAE delivery',
   },
 ]
 
@@ -115,14 +127,14 @@ export default function HeroBanner() {
               </Link>
             </div>
 
-            {/* Trust badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-9 max-w-2xl">
+            {/* Trust assurances */}
+            <div className={`mt-9 inline-flex max-w-[700px] flex-wrap items-stretch rounded-md border px-3 py-2.5 shadow-[0_18px_45px_rgba(47,36,20,0.14)] backdrop-blur-md ${dark ? 'bg-[#f7f1e7]/12 border-gold/30' : 'bg-white/70 border-gold/25'}`}>
               {TRUST.map(t => (
-                <div key={t.line1} className={`flex items-center gap-2.5 rounded-xl border border-gold/25 backdrop-blur-sm px-3 py-3 shadow-sm ${dark ? 'bg-black/25' : 'bg-white/65'}`}>
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gold/10">{t.icon}</div>
-                  <div>
-                    <p className={`text-[11px] font-bold leading-snug ${dark ? 'text-ivory' : 'text-charcoal'}`}>{t.line1}</p>
-                    <p className={`text-[10px] leading-snug ${dark ? 'text-ivory/60' : 'text-taupe'}`}>{t.line2}</p>
+                <div key={t.line1} className={`relative flex min-w-[136px] flex-1 items-center gap-2.5 px-2.5 py-1.5 after:absolute after:right-0 after:top-2 after:bottom-2 after:w-px after:bg-gold/25 last:after:hidden`}>
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gold/10 ring-1 ring-gold/25 [&_svg]:h-4 [&_svg]:w-4">{t.icon}</div>
+                  <div className="min-w-0 text-left">
+                    <p className={`text-[10px] font-bold leading-none uppercase tracking-[0.08em] ${dark ? 'text-ivory' : 'text-charcoal'}`}>{t.line1}</p>
+                    <p className={`mt-1 text-[9px] leading-tight ${dark ? 'text-ivory/70' : 'text-taupe'}`}>{t.line2}</p>
                   </div>
                 </div>
               ))}

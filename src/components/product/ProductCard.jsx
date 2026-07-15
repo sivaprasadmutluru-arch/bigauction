@@ -98,7 +98,8 @@ export default function ProductCard({ product, isFavourite, onToggleFavourite })
   const ticketPct    = ticketTarget > 0 ? Math.min((ticketsSold / ticketTarget) * 100, 100) : 0
   // `buyNowEnabled` only means the feature was configured by an admin.
   // The API's computed `buyNowAvailable` also applies time/threshold/status rules.
-  const buyNowAvail  = !!(buyNowPrice && auction?.buyNowAvailable && hasAuction)
+  const buyNowAvail  = !!(buyNowPrice && auction?.buyNowAvailable && isPending)
+  const showBuyNow    = isPending && buyNowAvail
 
   const countdownTarget =
     isActive  ? auction.scheduledEndTime :
@@ -111,10 +112,10 @@ export default function ProductCard({ product, isFavourite, onToggleFavourite })
 
   // ── Visibility flags (invisible = hidden but keeps layout space) ──
   // This ensures every card has the exact same height regardless of status.
-  const showPricingBoxes = hasAuction || !!buyNowPrice
+  const showPricingBoxes = hasAuction || showBuyNow
   const showStats        = hasAuction
-  const showCTA          = !isSold && hasAuction
-  const showViewDetails  = !isSold && !hasAuction
+  const showCTA          = isPending || isActive
+  const showViewDetails  = !isPending && !isActive
 
   return (
     <div className={`flex flex-col bg-white rounded-xl overflow-hidden border border-taupe/15 shadow-luxury transition-all duration-300 hover:shadow-luxury-hover h-full ${isSold ? 'opacity-60' : ''}`}>
@@ -193,7 +194,7 @@ export default function ProductCard({ product, isFavourite, onToggleFavourite })
         </Link>
 
         {/* ── Pricing boxes ── */}
-        <div className={`grid grid-cols-2 gap-2 ${!showPricingBoxes ? 'invisible pointer-events-none' : ''}`}>
+        <div className={`grid ${showBuyNow ? 'grid-cols-2' : 'grid-cols-1'} gap-2 ${!showPricingBoxes ? 'invisible pointer-events-none' : ''}`}>
 
           {/* Max Bid box */}
           <div className={`bg-emerald rounded-lg px-3 py-2.5 flex flex-col items-center gap-1 ${!hasAuction ? 'invisible' : ''}`}>
@@ -208,20 +209,18 @@ export default function ProductCard({ product, isFavourite, onToggleFavourite })
           </div>
 
           {/* Buy Now box */}
-          <div className={`border rounded-lg px-3 py-2.5 flex flex-col items-center gap-1 transition-opacity ${
-            !buyNowPrice ? 'invisible' :
-            !buyNowAvail ? 'border-taupe/20 opacity-40' :
-            'border-gold/35'
-          }`}>
-            <div className="flex items-center gap-1 text-taupe text-[9px] font-bold tracking-[0.1em] uppercase text-center leading-tight">
-              <IconBag className="w-3 h-3 flex-shrink-0" />
-              Buy Now Price
+          {showBuyNow && (
+            <div className="border border-gold/35 rounded-lg px-3 py-2.5 flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1 text-taupe text-[9px] font-bold tracking-[0.1em] uppercase text-center leading-tight">
+                <IconBag className="w-3 h-3 flex-shrink-0" />
+                Buy Now Price
+              </div>
+              <p className="text-base font-bold leading-none text-gold">
+                AED {buyNowPrice.toLocaleString()}
+              </p>
+              <span className="text-gold/40 text-[9px] leading-none">◆</span>
             </div>
-            <p className={`text-base font-bold leading-none ${buyNowAvail ? 'text-gold' : 'text-taupe'}`}>
-              {buyNowPrice ? `AED ${buyNowPrice.toLocaleString()}` : '—'}
-            </p>
-            <span className="text-gold/40 text-[9px] leading-none">◆</span>
-          </div>
+          )}
 
         </div>
 
@@ -270,24 +269,24 @@ export default function ProductCard({ product, isFavourite, onToggleFavourite })
         {/* Bottom section */}
         <div className="mt-auto flex flex-col gap-2">
 
-          {showCTA ? (
-            <div className="flex items-center gap-1.5">
+          {isPending ? (
+            <div className={`flex items-center gap-1.5 ${showBuyNow ? '' : 'grid grid-cols-1'}`}>
               <button
                 onClick={() => navigate(`/products/${product.id}`, { state: { autoTicket: true } })}
                 className="flex-1 bg-emerald text-ivory rounded-lg py-2.5 px-2 flex flex-col items-center btn-shimmer hover:opacity-90 transition-opacity"
               >
                 <div className="flex items-center gap-1">
                   <IconTicket className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="font-bold text-[11px] tracking-wide uppercase">Buy a Ticket</span>
+                  <span className="font-bold text-[11px] tracking-wide uppercase">Buy Auction Ticket</span>
                 </div>
                 <span className="text-ivory/60 text-[9px]">Join the auction</span>
               </button>
 
-              <div className="w-7 h-7 rounded-full border border-taupe/25 bg-white flex items-center justify-center flex-shrink-0">
-                <span className="text-taupe text-[8px] font-semibold">OR</span>
-              </div>
-
-              {buyNowAvail ? (
+              {showBuyNow && (
+                <>
+                  <div className="w-7 h-7 rounded-full border border-taupe/25 bg-white flex items-center justify-center flex-shrink-0">
+                    <span className="text-taupe text-[8px] font-semibold">OR</span>
+                  </div>
                 <button
                   onClick={() => navigate('/checkout', { state: { type: 'buynow', product, auction } })}
                   className="flex-1 bg-gold-gradient text-charcoal rounded-lg py-2.5 px-2 flex flex-col items-center btn-shimmer hover:opacity-90 transition-opacity"
@@ -298,22 +297,22 @@ export default function ProductCard({ product, isFavourite, onToggleFavourite })
                   </div>
                   <span className="text-charcoal/55 text-[9px]">Get it instantly</span>
                 </button>
-              ) : (
-                <div className="flex-1 bg-taupe/10 rounded-lg py-2.5 px-2 flex flex-col items-center opacity-50 cursor-not-allowed">
-                  <div className="flex items-center gap-1">
-                    <IconBag className="w-3.5 h-3.5 flex-shrink-0 text-taupe" />
-                    <span className="font-bold text-[11px] tracking-wide uppercase text-taupe">Buy Now</span>
-                  </div>
-                  <span className="text-taupe/60 text-[9px]">Unavailable</span>
-                </div>
+                </>
               )}
             </div>
+          ) : isActive ? (
+            <Link
+              to={`/products/${product.id}`}
+              className="w-full bg-emerald text-ivory rounded-lg py-2.5 text-center font-bold text-xs tracking-wider uppercase btn-shimmer hover:opacity-90 transition-opacity"
+            >
+              Join Live Auction
+            </Link>
           ) : showViewDetails ? (
             <Link
               to={`/products/${product.id}`}
               className="w-full bg-gold-gradient text-charcoal rounded-lg py-2.5 text-center font-bold text-xs tracking-wider uppercase btn-shimmer hover:opacity-90 transition-opacity"
             >
-              View Details
+              {isClosed || isSold ? 'View Result' : 'View Details'}
             </Link>
           ) : null}
 

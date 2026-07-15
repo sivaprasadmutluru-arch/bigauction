@@ -3,6 +3,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import { fetchCategories } from '../../features/categories/categoriesSlice'
 import api from '../../services/api'
 
+const needsLicenceReview = category => {
+  const text = `${category.name || ''} ${category.description || ''}`.toLowerCase()
+  return ['wine', 'spirit', 'alcohol', 'liquor', 'jewellery', 'jewelry', 'diamond', 'gold'].some(word => text.includes(word))
+}
+
 export default function AdminCategoriesPage() {
   const dispatch = useDispatch()
   const { items, loading } = useSelector(s => s.categories)
@@ -46,7 +51,10 @@ export default function AdminCategoriesPage() {
     <div>
       <div className="flex items-center gap-3 mb-6">
         <div className="h-6 w-1 bg-emerald rounded-full" />
-        <h2 className="font-display text-charcoal text-2xl font-semibold">Categories</h2>
+        <div>
+          <h2 className="font-display text-charcoal text-2xl font-semibold">Categories</h2>
+          <p className="text-taupe text-xs mt-1">Use categories for auction grouping only. Restricted goods may require licensing review before listing.</p>
+        </div>
       </div>
 
       {/* Add form */}
@@ -61,6 +69,9 @@ export default function AdminCategoriesPage() {
           <div>
             <label className="block text-taupe text-xs mb-1">Description</label>
             <input value={description} onChange={e => setDescription(e.target.value)} className={cls} placeholder="Optional" />
+          </div>
+          <div className="rounded-lg border border-gold/25 bg-gold/8 px-3 py-2 text-[11px] text-taupe">
+            Categories such as jewellery, gold, wine, spirits, or other regulated goods should be reviewed for UAE licensing and compliance before publishing products.
           </div>
           <div className="flex justify-end">
             <button type="submit" disabled={saving || !name.trim()}
@@ -84,6 +95,7 @@ export default function AdminCategoriesPage() {
               <tr className="bg-taupe/5 border-b border-taupe/15 text-left">
                 <th className="px-4 py-3 text-taupe font-medium">Name</th>
                 <th className="px-4 py-3 text-taupe font-medium hidden sm:table-cell">Description</th>
+                <th className="px-4 py-3 text-taupe font-medium hidden md:table-cell">Compliance</th>
                 <th className="px-4 py-3 text-taupe font-medium text-right">Actions</th>
               </tr>
             </thead>
@@ -92,6 +104,13 @@ export default function AdminCategoriesPage() {
                 <tr key={c.id} className="border-b border-taupe/10 last:border-0 hover:bg-taupe/10 transition-colors">
                   <td className="px-4 py-3 text-charcoal">{c.name}</td>
                   <td className="px-4 py-3 text-taupe hidden sm:table-cell">{c.description || '—'}</td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    {needsLicenceReview(c) ? (
+                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gold/10 text-gold border border-gold/20">Licence review</span>
+                    ) : (
+                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald/10 text-emerald border border-emerald/15">Standard</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <button onClick={() => onDelete(c.id)} className="text-xs text-burgundy hover:underline">Delete</button>
                   </td>

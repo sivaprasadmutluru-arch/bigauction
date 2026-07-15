@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { buyNow, fetchWallet } from '../features/wallet/walletSlice'
 import { checkoutAuctionWin, purchaseTicketByCard } from '../features/auctions/auctionsSlice'
+import { fetchAddresses, addAddress } from '../features/addresses/addressSlice'
 
 const GCC_COUNTRIES = ['UAE', 'Saudi Arabia', 'Kuwait', 'Bahrain', 'Oman', 'Qatar']
 
@@ -13,6 +14,24 @@ const EMPTY_ADDRESS = {
   shippingCity: '',
   shippingCountry: 'UAE',
 }
+
+const toCheckoutAddress = saved => ({
+  shippingName: saved?.fullName || '',
+  shippingPhone: saved?.phone || '',
+  shippingAddress: [saved?.addressLine1, saved?.addressLine2].filter(Boolean).join(', '),
+  shippingCity: saved?.city || '',
+  shippingCountry: saved?.country || 'UAE',
+})
+
+const toAddressBookPayload = address => ({
+  label: 'Checkout Address',
+  fullName: address.shippingName,
+  phone: address.shippingPhone,
+  addressLine1: address.shippingAddress,
+  city: address.shippingCity,
+  country: address.shippingCountry,
+  isDefault: false,
+})
 
 const GRADE_LABEL = {
   LIKE_NEW:   'Like New',
@@ -448,7 +467,7 @@ function BuyNowSuccessScreen({ product, auction, user, completedAt }) {
                 <p className="text-emerald text-xs font-bold uppercase tracking-widest">Auction Summary</p>
                 <div className="space-y-2.5 text-sm">
                   {[
-                    { label: 'Auction Type',        value: 'Live Auction' },
+                    { label: 'Completion Type',     value: 'Instant Buy' },
                     ticketPrice > 0 && { label: 'Ticket Price',          value: `AED ${ticketPrice.toLocaleString()}` },
                     ticketTarget > 0 && { label: 'Tickets Sold',          value: `${ticketsSold} / ${ticketTarget}` },
                     duration !== '—' && { label: 'Auction Duration',      value: duration },
@@ -589,7 +608,7 @@ function TicketSuccessScreen({ productId, navigate }) {
     <SuccessScreen
       title="Ticket Purchased!"
       subtitle="Your auction entry ticket has been confirmed."
-      note="You can now place bids once the auction goes live."
+      note="You can place offers once the auction goes live."
       redirectLabel="Returning to auction…"
     />
   )
@@ -735,7 +754,7 @@ function TicketCheckout({ product, auction, onSuccess }) {
                 </div>
               </div>
               <div className="border-t border-taupe/10 pt-4 space-y-2.5">
-                {['Secure card payment', 'Instant ticket confirmation', 'Participate in live bidding'].map(note => (
+                {['Secure card payment', 'Instant ticket confirmation', 'Join the live auction and place offers'].map(note => (
                   <div key={note} className="flex items-center gap-2 text-xs text-taupe">
                     <span className="text-gold flex-shrink-0">◆</span>
                     <span>{note}</span>
@@ -759,6 +778,7 @@ export default function CheckoutPage() {
 
   const { wallet, loading: walletLoading } = useSelector(s => s.wallet)
   const { loading: auctionLoading }         = useSelector(s => s.auctions)
+  const { items: savedAddresses }           = useSelector(s => s.addresses)
   const { user }                            = useSelector(s => s.auth)
   const submitting = walletLoading || auctionLoading
 
@@ -767,12 +787,25 @@ export default function CheckoutPage() {
 
   const [step, setStep]             = useState(1)
   const [address, setAddress]       = useState(EMPTY_ADDRESS)
+  const [selectedAddressId, setSelectedAddressId] = useState('new')
+  const [addressInitialized, setAddressInitialized] = useState(false)
   const [creditInput, setCreditInput] = useState(null)
   const [error, setError]           = useState(null)
   const [success, setSuccess]       = useState(false)
   const [completedAt, setCompletedAt] = useState(null)
 
-  useEffect(() => { dispatch(fetchWallet()) }, [dispatch])
+  useEffect(() => {
+    dispatch(fetchWallet())
+    if (user) dispatch(fetchAddresses())
+  }, [dispatch, user])
+
+  useEffect(() => {
+    if (addressInitialized || savedAddresses.length === 0) return
+    const preferred = savedAddresses.find(a => a.isDefault) || savedAddresses[0]
+    setAddress(toCheckoutAddress(preferred))
+    setSelectedAddressId(String(preferred.id))
+    setAddressInitialized(true)
+  }, [addressInitialized, savedAddresses])
 
   if (!type || !product) {
     return (
@@ -845,6 +878,14 @@ export default function CheckoutPage() {
       ? e.target.value.replace(/\D/g, '').slice(0, 10)
       : e.target.value
     setAddress(a => ({ ...a, [e.target.name]: value }))
+    setSelectedAddressId('new')
+  }
+
+  const onSavedAddressChange = e => {
+    const id = e.target.value
+    setSelectedAddressId(id)
+    const saved = savedAddresses.find(a => String(a.id) === id)
+    setAddress(saved ? toCheckoutAddress(saved) : EMPTY_ADDRESS)
   }
 
   const phoneValid = /^\d{10}$/.test(address.shippingPhone)
@@ -871,6 +912,9 @@ export default function CheckoutPage() {
     e.preventDefault()
     setError(null)
     try {
+      if (selectedAddressId === 'new') {
+        await dispatch(addAddress(toAddressBookPayload(address))).unwrap()
+      }
       if (type === 'buynow') {
         await dispatch(buyNow({
           productId: product.id,
@@ -921,7 +965,7 @@ export default function CheckoutPage() {
           </div>
 
           <p className="text-taupe text-xs">
-            {step === 1 ? 'Delivery' : step === 2 ? 'Review & Pay' : 'Done'}
+            {step === 1 ? 'Delivery' : step === 2 ? 'Review & Confirm' : 'Done'}
           </p>
         </div>
       </div>
@@ -937,10 +981,25 @@ export default function CheckoutPage() {
               <form onSubmit={onContinue} className="space-y-6">
                 <div>
                   <h1 className="text-charcoal text-2xl font-bold">Delivery Address</h1>
-                  <p className="text-taupe text-sm mt-1">Where should we deliver your order?</p>
+                  <p className="text-taupe text-sm mt-1">Use a saved address or add a new one for this order.</p>
                 </div>
 
                 <div className="bg-white border border-taupe/15 rounded-xl p-6 space-y-4">
+                  {savedAddresses.length > 0 && (
+                    <div>
+                      <label className="block text-taupe text-xs font-medium mb-1.5">Saved Address</label>
+                      <select
+                        value={selectedAddressId}
+                        onChange={onSavedAddressChange}
+                        className="w-full bg-white border border-taupe/25 text-charcoal rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/20 transition-all"
+                      >
+                        {savedAddresses.map(saved => (
+                          <option key={saved.id} value={saved.id}>{saved.label} - {saved.city}, {saved.country}</option>
+                        ))}
+                        <option value="new">Add a new address</option>
+                      </select>
+                    </div>
+                  )}
                   <InputField label="Full Name" name="shippingName" value={address.shippingName} onChange={onAddressChange} required placeholder="As it appears on your ID" />
                   <InputField
                     label="Phone Number"
@@ -981,11 +1040,11 @@ export default function CheckoutPage() {
               </form>
             )}
 
-            {/* Step 2: Review & Pay */}
+            {/* Step 2: Review and confirm */}
             {step === 2 && (
               <form onSubmit={onSubmit} className="space-y-6">
                 <div>
-                  <h1 className="text-charcoal text-2xl font-bold">Review & Pay</h1>
+                  <h1 className="text-charcoal text-2xl font-bold">Review & Confirm Purchase</h1>
                   <p className="text-taupe text-sm mt-1">Confirm your delivery details and complete your order.</p>
                 </div>
 

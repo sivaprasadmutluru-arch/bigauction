@@ -295,7 +295,7 @@ export default function HowItWorksPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M8.25 21V9m0 0L4.5 5.25M8.25 9l3.75-3.75m3.75 15V9m0 0l3.75-3.75M15.75 9l-3.75-3.75" />
                       </svg>
                     ),
-                    text: 'Place your bids and alter your strategy as needed. Switch between Manual and Auto Bid anytime and adjust your bids freely.',
+                    text: 'Place your offers and adjust your strategy as needed. Switch between manual and automatic offers anytime.',
                   },
                 ].map((item, i) => (
                   <div key={i} className="flex gap-3 items-start">
@@ -308,7 +308,7 @@ export default function HowItWorksPage() {
               </div>
 
               <Callout>
-                No special skills required. Every bid elevates your possibility of triumph — secure your win with a guaranteed savings of up to 30% or even more by bidding smartly!
+                No special skills required. Every offer keeps you in the running while the auction is live.
               </Callout>
             </div>
           </div>

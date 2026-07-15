@@ -10,7 +10,7 @@
   --color-taupe:       #8A8176;
   --color-burgundy:    #6E1F28;
 
-  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-display: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
   --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -36,7 +36,7 @@ html { scroll-behavior: smooth; }
 
 /* ── Font utility ── */
 .font-display {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
 }
 
 /* ── Gold gradient button ── */
