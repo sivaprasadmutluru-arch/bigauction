@@ -31,6 +31,8 @@ import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,8 +69,13 @@ public class AdminController {
     @PostMapping("/users/{userId}/credit")
     public ResponseEntity<ApiResponse<Void>> adjustUserCredit(
             @PathVariable Long userId,
-            @RequestBody CreditAdjustmentRequest request) {
-        adminService.adjustUserCredit(userId, request.getAmount(), request.getNote());
+            @RequestBody CreditAdjustmentRequest request,
+            @AuthenticationPrincipal UserDetails admin) {
+        String adminLabel = admin != null ? admin.getUsername() : "unknown-admin";
+        String note = "Admin: " + adminLabel + (request.getNote() != null && !request.getNote().isBlank()
+                ? " | " + request.getNote()
+                : "");
+        adminService.adjustUserCredit(userId, request.getAmount(), note);
         return ResponseEntity.ok(ApiResponse.ok("Credit adjusted for user #" + userId));
     }
 

@@ -45,9 +45,16 @@ public class BidService {
         }
         BigDecimal nextAllowedBid = getNextAllowedBid(auction);
 
-        if (request.getAmount().compareTo(nextAllowedBid) != 0) {
+        if (request.getAmount().compareTo(nextAllowedBid) < 0) {
             throw new AppException(HttpStatus.BAD_REQUEST,
-                    "Next bid must be " + currency + " " + nextAllowedBid.toPlainString());
+                    "Next offer must be at least " + currency + " " + nextAllowedBid.toPlainString());
+        }
+
+        BigDecimal increment = getBidIncrement(auction);
+        BigDecimal amountAboveCurrent = request.getAmount().subtract(auction.getCurrentHighestBid());
+        if (amountAboveCurrent.remainder(increment).compareTo(BigDecimal.ZERO) != 0) {
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    "Offer must follow " + currency + " " + increment.toPlainString() + " increments");
         }
         if (auction.getMaxBidAmount() != null
                 && request.getAmount().compareTo(auction.getMaxBidAmount()) > 0) {
@@ -154,10 +161,13 @@ public class BidService {
     }
 
     BigDecimal getNextAllowedBid(Auction auction) {
-        BigDecimal increment = auction.getBidIncrement() != null && auction.getBidIncrement().compareTo(BigDecimal.ZERO) > 0
+        return auction.getCurrentHighestBid().add(getBidIncrement(auction));
+    }
+
+    private BigDecimal getBidIncrement(Auction auction) {
+        return auction.getBidIncrement() != null && auction.getBidIncrement().compareTo(BigDecimal.ZERO) > 0
                 ? auction.getBidIncrement()
                 : BigDecimal.ONE;
-        return auction.getCurrentHighestBid().add(increment);
     }
 
     @Transactional(readOnly = true)
@@ -210,7 +220,7 @@ public class BidService {
         return BidResponse.builder()
                 .id(bid.getId())
                 .auctionId(bid.getAuction().getId())
-                .bidderName(bid.getUser().getName())
+                .bidderName(bid.getUser().getNickname() != null ? bid.getUser().getNickname() : bid.getUser().getName())
                 .amount(bid.getAmount())
                 .currency(currency)
                 .createdAt(bid.getCreatedAt())
