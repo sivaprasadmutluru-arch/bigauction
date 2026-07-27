@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { fetchAuctions } from '../features/auctions/auctionsSlice'
 import { fetchFavourites } from '../features/favourites/favouritesSlice'
 import useFavourites from '../hooks/useFavourites'
+import api from '../services/api'
 import HeroBanner from '../components/common/HeroBanner'
 import liveAuctionBannerImage from '../assets/live-auction-gavel-v2-crop.png'
 import liveAuctionWatchImage from '../assets/liveauctionwatch.jpeg'
@@ -36,6 +37,7 @@ function useCountdown(target) {
 
 const pad = n => String(n).padStart(2, '0')
 const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/api\/?$/, '')
+const HOW_IT_WORKS_VIDEO_URL = 'https://www.youtube.com/embed/HV3mKhUAG_U?autoplay=1&rel=0'
 
 const resolveImageUrl = url => {
   if (!url) return null
@@ -51,6 +53,58 @@ const formatAED = value => {
 const formatTimeline = value => value
   ? new Date(value).toLocaleDateString('en-AE', { weekday: 'short', day: 'numeric', month: 'short' })
   : 'Announcing soon'
+
+function HowItWorksVideoModal({ onClose }) {
+  useEffect(() => {
+    const onKeyDown = event => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-almost-black/85 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Watch how Big Auction works"
+      onClick={event => event.target === event.currentTarget && onClose()}
+    >
+      <div className="relative w-full max-w-4xl overflow-hidden rounded-xl bg-charcoal shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-5">
+          <p className="font-display text-base font-semibold text-ivory sm:text-lg">Watch How It Works</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-ivory/70 transition-colors hover:bg-white/10 hover:text-ivory"
+            aria-label="Close video"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+        <div className="aspect-video bg-black">
+          <iframe
+            className="h-full w-full"
+            src={HOW_IT_WORKS_VIDEO_URL}
+            title="Big Auction how it works video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ── Section header banner ──────────────────────────────────────
 
@@ -397,10 +451,15 @@ function LiveAuctionCard({ auction, isFavourite, onToggleFavourite }) {
 
 // ── Recent Winner card ─────────────────────────────────────────
 
-function WinnerCard({ auction }) {
+function WinnerCard({ auction, myOrders = [] }) {
+  const { user } = useSelector(s => s.auth)
   const product = auction.product
   const image   = resolveImageUrl(product?.imageUrls?.[0])
   const [imgFailed, setImgFailed] = useState(false)
+  const isWinner = !!(user && auction.winnerId === user.id)
+  const myOrder = isWinner
+    ? myOrders.find(o => o.auctionId === auction.id && o.type === 'AUCTION_WIN')
+    : null
   const date    = auction.endTime
     ? new Date(auction.endTime).toLocaleDateString('en-AE', { day: 'numeric', month: 'short', year: 'numeric' })
     : '—'
@@ -409,7 +468,10 @@ function WinnerCard({ auction }) {
     : '—'
 
   return (
-    <div className="bg-[#fffaf1] border border-[#dcc89f] rounded-lg overflow-hidden shadow-[0_10px_28px_rgba(47,36,20,0.12)] flex flex-col">
+    <Link
+      to={`/products/${product?.id}`}
+      className={`bg-[#fffaf1] border rounded-lg overflow-hidden shadow-[0_10px_28px_rgba(47,36,20,0.12)] flex flex-col hover:shadow-[0_14px_34px_rgba(47,36,20,0.18)] transition-shadow ${isWinner ? 'border-gold ring-2 ring-gold/40' : 'border-[#dcc89f]'}`}
+    >
       <div className="relative h-56 bg-[#f7efe3] overflow-hidden flex-shrink-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.86),rgba(247,239,227,0.72)_58%,rgba(224,204,170,0.28))]" />
         {image && !imgFailed ? (
@@ -425,7 +487,12 @@ function WinnerCard({ auction }) {
         ) : (
           <div className="w-full h-full flex items-center justify-center text-taupe/20 text-4xl">◆</div>
         )}
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-1 bg-emerald text-ivory text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-gold/40 shadow-sm">
+        {isWinner && (
+          <div className="absolute top-0 left-0 right-0 z-20 bg-gold-gradient text-almost-black text-[11px] font-bold text-center py-1.5 uppercase tracking-wide shadow-sm">
+            {myOrder?.status === 'DELIVERED' ? '📦 Delivered' : myOrder?.status === 'CANCELLED' ? 'Order Cancelled' : '🏆 You Won This Auction!'}
+          </div>
+        )}
+        <div className={`absolute left-3 z-20 flex items-center gap-1 bg-emerald text-ivory text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-gold/40 shadow-sm ${isWinner ? 'top-11' : 'top-3'}`}>
           <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -435,7 +502,28 @@ function WinnerCard({ auction }) {
       <div className="p-4 space-y-3 text-xs text-center flex flex-col flex-1">
         <p className="font-display text-charcoal font-semibold text-lg leading-tight line-clamp-2">{product?.name}</p>
         <div className="flex items-center justify-center gap-2 text-gold/70 -mt-1"><span className="h-px w-12 bg-gold/30" />◆<span className="h-px w-12 bg-gold/30" /></div>
-        <p className="text-[10px]"><span className="text-taupe">Winner: </span><span className="text-emerald font-bold tracking-[0.18em] uppercase">{winnerDisplay}</span></p>
+        {isWinner ? (
+          myOrder?.status === 'DELIVERED' ? (
+            <div className="rounded-lg border border-emerald bg-emerald/10 px-3 py-2 flex items-center justify-center gap-1.5">
+              <span className="text-emerald text-[11px] font-bold uppercase tracking-wide">📦 Delivered</span>
+            </div>
+          ) : myOrder?.status === 'CANCELLED' ? (
+            <div className="rounded-lg border border-burgundy bg-burgundy/10 px-3 py-2 flex items-center justify-center gap-1.5">
+              <span className="text-burgundy text-[11px] font-bold uppercase tracking-wide">Cancelled — Refunded</span>
+            </div>
+          ) : myOrder ? (
+            <div className="rounded-lg border border-emerald bg-emerald/10 px-3 py-2 flex items-center justify-center gap-1.5">
+              <span className="text-emerald text-[11px] font-bold uppercase tracking-wide">✓ Payment Completed</span>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-gold bg-gold/10 px-3 py-2 flex items-center justify-center gap-1.5">
+              <span className="text-gold text-sm">⚠</span>
+              <span className="text-charcoal text-[11px] font-bold uppercase tracking-wide">Checkout Pending — Tap to Pay</span>
+            </div>
+          )
+        ) : (
+          <p className="text-[10px]"><span className="text-taupe">Winner: </span><span className="text-emerald font-bold tracking-[0.18em] uppercase">{winnerDisplay}</span></p>
+        )}
         <div className="rounded-lg border border-[#dec798] bg-[#fff9ef] py-3 px-3 shadow-sm">
           <p className="text-emerald text-[9px] font-bold uppercase tracking-wider">Final Amount</p>
           <p className="font-display text-[#b77a2a] text-[28px] font-medium leading-none mt-1 whitespace-nowrap">AED {Number(auction.currentHighestBid || 0).toLocaleString()}</p>
@@ -446,7 +534,7 @@ function WinnerCard({ auction }) {
           <div className="px-2"><p className="text-taupe text-[8px] uppercase">Completed On</p><p className="text-charcoal font-semibold mt-1">{date}</p></div>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -512,10 +600,15 @@ export default function HomePage() {
   const { items: auctions } = useSelector(s => s.auctions)
   const { user } = useSelector(s => s.auth)
   const { isFavourite, toggle: toggleFavourite } = useFavourites()
+  const [showHowItWorksVideo, setShowHowItWorksVideo] = useState(false)
+  const [myOrders, setMyOrders] = useState([])
 
   useEffect(() => {
     dispatch(fetchAuctions())
-    if (user) dispatch(fetchFavourites())
+    if (user) {
+      dispatch(fetchFavourites())
+      api.get('/orders').then(res => setMyOrders(res.data || [])).catch(() => {})
+    }
   }, [])
 
   const pendingAuctions = auctions.filter(a => a.status === 'PENDING')
@@ -617,7 +710,7 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {recentWinners.map(a => (
-                <WinnerCard key={a.id} auction={a} />
+                <WinnerCard key={a.id} auction={a} myOrders={myOrders} />
               ))}
             </div>
             <p className="mt-4 rounded-md bg-[#fff8eb] border border-gold/20 py-2 text-center text-[10px] text-taupe">Thank you to our community of auction members. Your trust drives every successful result.</p>
@@ -708,8 +801,9 @@ export default function HomePage() {
                   Secure. Transparent. Trusted.
                 </p>
               </div>
-              <a
-                href="/#how-it-works"
+              <button
+                type="button"
+                onClick={() => setShowHowItWorksVideo(true)}
                 className="inline-flex items-center gap-2 bg-emerald text-ivory text-xs font-bold px-6 py-3 rounded-full hover:bg-charcoal transition-colors uppercase tracking-wide flex-shrink-0"
               >
                 <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gold text-almost-black">
@@ -718,7 +812,7 @@ export default function HomePage() {
                   </svg>
                 </span>
                 Watch How It Works
-              </a>
+              </button>
             </div>
 
           </div>
@@ -759,6 +853,10 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {showHowItWorksVideo && (
+        <HowItWorksVideoModal onClose={() => setShowHowItWorksVideo(false)} />
+      )}
 
     </div>
   )

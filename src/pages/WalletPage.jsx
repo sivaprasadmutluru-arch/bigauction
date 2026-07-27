@@ -71,7 +71,7 @@ function AddFundsModal({ onClose, onSubmitted, initialAmount = '' }) {
 
         {step === 'details' && (
           <div className="space-y-5">
-            <p className="text-taupe text-sm">Transfer the desired amount to the bank account below, then click <span className="text-charcoal font-medium">I've Transferred</span> to submit your reference number for approval.</p>
+            <p className="text-taupe text-sm">Transfer the desired amount to the bank account below, then click <span className="text-charcoal font-medium">I've Transferred</span> to submit your reference number and credit your wallet.</p>
 
             <div className="bg-taupe/10 rounded-lg divide-y divide-taupe/10">
               {BANK_DETAILS.map(({ label, value }) => (
@@ -82,13 +82,13 @@ function AddFundsModal({ onClose, onSubmitted, initialAmount = '' }) {
               ))}
             </div>
 
-            <p className="text-taupe text-xs">Use your name or email as the payment reference. Once transferred, submit your bank reference number and we will credit your wallet within 1–2 business days.</p>
+            <p className="text-taupe text-xs">Use your name or email as the payment reference. Once submitted, your wallet balance is credited immediately.</p>
 
             <button
               onClick={() => setStep('form')}
               className="w-full bg-gold text-almost-black font-bold py-3 rounded-lg hover:bg-gold/90 transition-colors"
             >
-              I've Transferred — Submit Reference
+              I've Transferred — Credit Wallet
             </button>
           </div>
         )}
@@ -182,6 +182,7 @@ export default function WalletPage() {
   const onDepositSubmitted = () => {
     setShowAddFunds(false)
     setDepositSuccess(s => !s)
+    dispatch(fetchWallet())
   }
 
   if (loading && !wallet) return <Loader text="Loading wallet…" />
@@ -248,7 +249,7 @@ export default function WalletPage() {
         {/* Deposit request history */}
         {deposits.length > 0 && (
           <div className="bg-white border border-taupe/15 rounded-xl p-6">
-            <h2 className="text-charcoal font-semibold mb-4">Deposit Requests</h2>
+            <h2 className="text-charcoal font-semibold mb-4">Wallet Top-Ups</h2>
             <div className="space-y-3">
               {deposits.map(d => (
                 <div key={d.id} className="flex items-center justify-between py-3 border-b border-taupe/10 last:border-0">

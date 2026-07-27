@@ -64,10 +64,10 @@ export default function Navbar() {
                     key={l.label}
                     to={l.to}
                     className={({ isActive }) =>
-                      `relative text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
+                      `relative text-base font-medium px-3 py-2 rounded-lg transition-colors ${
                         isActive
                           ? 'text-emerald bg-emerald/6'
-                          : 'text-charcoal hover:text-emerald hover:bg-emerald/5'
+                          : 'text-emerald hover:text-emerald/80 hover:bg-emerald/5'
                       }`
                     }
                   >
@@ -90,7 +90,6 @@ export default function Navbar() {
                   <>
                     <div className="hidden md:block text-right leading-tight">
                       <p className="text-sm font-semibold text-emerald">Hello, {publicDisplayName}</p>
-                      <p className="text-[10px] text-taupe">Signed in privately</p>
                     </div>
                     <Link to="/wallet" className="hidden sm:block text-sm text-charcoal font-medium hover:text-emerald transition-colors">
                       AED {wallet ? Number(wallet.balance).toLocaleString() : '0'}
@@ -141,7 +140,7 @@ export default function Navbar() {
                   </>
                 ) : (
                   <div className="hidden sm:flex items-center gap-2">
-                    <Link to="/login" className="text-sm font-semibold text-charcoal hover:text-emerald transition-colors px-3 py-1.5 uppercase tracking-wide">
+                    <Link to="/login" className="text-sm font-semibold text-emerald hover:text-emerald/80 transition-colors px-3 py-1.5 uppercase tracking-wide">
                       Login
                     </Link>
                     <Link to="/register" className="text-sm font-bold bg-emerald text-ivory px-5 py-2 rounded hover:bg-emerald/90 transition-colors uppercase tracking-wide">
@@ -167,7 +166,7 @@ export default function Navbar() {
                     <Disclosure.Button
                       as="span"
                       className={`block px-3 py-2 rounded text-sm transition-colors cursor-pointer ${
-                        isActive ? 'text-emerald bg-emerald/6 font-medium' : 'text-charcoal hover:bg-taupe/10'
+                        isActive ? 'text-emerald bg-emerald/6 font-medium' : 'text-emerald hover:bg-emerald/5'
                       }`}
                     >
                       {l.label}
@@ -177,7 +176,7 @@ export default function Navbar() {
               ))}
               {!user ? (
                 <div className="border-t border-taupe/20 pt-3 mt-2 space-y-2">
-                  <Disclosure.Button as={Link} to="/login" className="block px-3 py-2 text-sm text-center font-semibold text-charcoal border border-taupe/30 rounded">
+                  <Disclosure.Button as={Link} to="/login" className="block px-3 py-2 text-sm text-center font-semibold text-emerald border border-taupe/30 rounded">
                     Login
                   </Disclosure.Button>
                   <Disclosure.Button as={Link} to="/register" className="block px-3 py-2 text-sm text-center font-bold bg-emerald text-ivory rounded">

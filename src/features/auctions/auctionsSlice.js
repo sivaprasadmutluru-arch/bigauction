@@ -109,8 +109,12 @@ const auctionsSlice = createSlice({
     addLiveBid(state, action)  {
       state.bids.unshift(action.payload)
       if (state.selected) {
-        state.selected.currentHighestBid = action.payload.amount
-        state.selected.highestBidderName = action.payload.bidderName
+        const currentHighest = Number(state.selected.currentHighestBid || 0)
+        const bidderTotal = Number(action.payload.bidderTotalAmount ?? action.payload.amount ?? 0)
+        if (bidderTotal >= currentHighest) {
+          state.selected.currentHighestBid = bidderTotal
+          state.selected.highestBidderName = action.payload.bidderName
+        }
       }
     },
     // Called by the WebSocket hook on auction status change

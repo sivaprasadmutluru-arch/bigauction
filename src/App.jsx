@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/common/Navbar'
 import Footer from './components/common/Footer'
 import ProtectedRoute from './components/common/ProtectedRoute'
@@ -31,9 +32,29 @@ import AdminReportsPage    from './pages/admin/AdminReportsPage'
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
 import AdminDepositsPage   from './pages/admin/AdminDepositsPage'
 
+function ScrollToRoutePosition() {
+  const { pathname, search, hash } = useLocation()
+
+  useEffect(() => {
+    if (hash) {
+      window.setTimeout(() => {
+        const target = document.getElementById(decodeURIComponent(hash.slice(1)))
+        if (target) target.scrollIntoView({ block: 'start' })
+        else window.scrollTo({ top: 0, left: 0 })
+      }, 0)
+      return
+    }
+
+    window.scrollTo({ top: 0, left: 0 })
+  }, [pathname, search, hash])
+
+  return null
+}
+
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-ivory">
+      <ScrollToRoutePosition />
       <Navbar />
 
       <main className="flex-1">

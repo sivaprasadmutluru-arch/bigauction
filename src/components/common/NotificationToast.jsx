@@ -24,6 +24,11 @@ const TYPE_CONFIG = {
     bg: 'bg-gold',
     label: 'Auto Bid Limit Reached',
   },
+  ORDER_STATUS: {
+    icon: '📦',
+    bg: 'bg-emerald',
+    label: 'Order Update',
+  },
 }
 
 let nextId = 1
@@ -80,6 +85,15 @@ export default function NotificationToast() {
                     onClick={() => dismiss(toast.id)}
                   >
                     {toast.type === 'AUTO_BID_MAX_REACHED' ? 'Update auto bid →' : 'Bid again →'}
+                  </Link>
+                )}
+                {toast.type === 'ORDER_STATUS' && (
+                  <Link
+                    to={`/orders`}
+                    className="mt-2 inline-block text-xs text-gold font-semibold hover:underline"
+                    onClick={() => dismiss(toast.id)}
+                  >
+                    View My Orders →
                   </Link>
                 )}
               </div>

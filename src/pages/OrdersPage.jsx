@@ -5,7 +5,6 @@ import Loader from '../components/common/Loader'
 const STATUS_STYLE = {
   PENDING:   'bg-gold/10 text-gold',
   CONFIRMED: 'bg-emerald/10 text-emerald',
-  SHIPPED:   'bg-taupe/10 text-taupe',
   DELIVERED: 'bg-emerald/20 text-emerald',
   CANCELLED: 'bg-burgundy/10 text-burgundy',
 }
@@ -71,7 +70,17 @@ export default function OrdersPage() {
                       </p>
                     )}
 
-                    <p className="text-taupe text-xs mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
+                    {order.status === 'CANCELLED' && (
+                      <p className="text-burgundy text-xs mt-1">Refunded to your wallet</p>
+                    )}
+
+                    <p className="text-taupe text-xs mt-1">
+                      {order.status === 'DELIVERED' && order.updatedAt
+                        ? `Delivered ${new Date(order.updatedAt).toLocaleDateString()}`
+                        : order.status === 'CANCELLED' && order.updatedAt
+                        ? `Cancelled ${new Date(order.updatedAt).toLocaleDateString()}`
+                        : `Ordered ${new Date(order.createdAt).toLocaleDateString()}`}
+                    </p>
                   </div>
 
                   <div className="text-right flex-shrink-0">

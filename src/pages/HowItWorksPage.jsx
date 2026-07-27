@@ -58,12 +58,33 @@ function Step1Visual() {
       </div>
       <div className="flex flex-col gap-4">
         {[
-          { label: 'Explore Products', icon: '🔍' },
-          { label: 'Buy Your Ticket',  icon: '🎫' },
-          { label: 'Set Your Strategy', icon: '🎯' },
+          {
+            label: 'Explore Products',
+            icon: (
+              <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Buy Your Ticket',
+            icon: (
+              <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a3 3 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Set Your Strategy',
+            icon: (
+              <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+              </svg>
+            ),
+          },
         ].map((item, i) => (
           <div key={i} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
-            <span className="text-xl">{item.icon}</span>
+            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/10">{item.icon}</span>
             <p className="text-ivory text-sm font-medium">{item.label}</p>
             <svg className="ml-auto w-4 h-4 text-gold/60" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -135,12 +156,33 @@ function Step3Visual() {
       </div>
       <div className="space-y-2">
         {[
-          { icon: '💳', text: 'Pay securely via gateway' },
-          { icon: '🏪', text: 'Pick up from Authorized Dealer' },
-          { icon: '🚚', text: 'Or deliver to your doorstep' },
+          {
+            icon: (
+              <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M3.75 6h16.5A1.5 1.5 0 0121.75 7.5v9A1.5 1.5 0 0120.25 18H3.75a1.5 1.5 0 01-1.5-1.5v-9A1.5 1.5 0 013.75 6z" />
+              </svg>
+            ),
+            text: 'Pay securely via gateway',
+          },
+          {
+            icon: (
+              <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 21V9.75m15 11.25V9.75M6 9.75V6.375c0-.621.504-1.125 1.125-1.125h9.75c.621 0 1.125.504 1.125 1.125V9.75M9 21v-6h6v6M3 9.75h18" />
+              </svg>
+            ),
+            text: 'Pick up from Authorized Dealer',
+          },
+          {
+            icon: (
+              <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375A1.125 1.125 0 012.25 17.625V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25m2.25 11.177h-2.25m0-11.177v6.677m0 0h-12" />
+              </svg>
+            ),
+            text: 'Or deliver to your doorstep',
+          },
         ].map((item, i) => (
           <div key={i} className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 shadow-sm border border-taupe/10">
-            <span>{item.icon}</span>
+            <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gold/10">{item.icon}</span>
             <span className="text-charcoal text-xs font-medium">{item.text}</span>
           </div>
         ))}
@@ -367,22 +409,12 @@ export default function HowItWorksPage() {
       {/* ── STATS STRIP ──────────────────────────────────────── */}
       <section className="bg-white border-y border-taupe/10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center">
             {[
-              {
-                value: 'Up to 30%',
-                label: 'Guaranteed Savings',
-                sub: 'Win smarter, not harder',
-                icon: (
-                  <svg className="w-6 h-6 text-gold mx-auto mb-3" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185z" />
-                  </svg>
-                ),
-              },
               {
                 value: '100%',
                 label: 'Authentic Products',
-                sub: 'Sourced from UAE Authorized Dealers',
+                sub: 'Sourced from UAE Authorized proffesionals',
                 icon: (
                   <svg className="w-6 h-6 text-gold mx-auto mb-3" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />

@@ -13,10 +13,10 @@ const STATUS_STYLE = {
 }
 
 const STATUS_HELP = {
-  PENDING: 'Awaiting payment or admin confirmation',
-  CONFIRMED: 'Paid or verified; prepare fulfilment',
+  PENDING: 'Payment not completed',
+  CONFIRMED: 'Paid; prepare fulfilment',
   DELIVERED: 'Completed delivery or handover',
-  CANCELLED: 'Cancelled or refund handled separately',
+  CANCELLED: 'Cancelled; amount auto-refunded to wallet',
 }
 
 const statusLabel = status => (status || '—').replace(/_/g, ' ')
@@ -39,7 +39,7 @@ export default function AdminOrdersPage() {
         <div className="h-6 w-1 bg-emerald rounded-full" />
         <div>
           <h2 className="font-display text-charcoal text-2xl font-semibold">All Orders <span className="text-taupe text-lg font-normal">({orders.length})</span></h2>
-          <p className="text-taupe text-xs mt-1">Use status deliberately: payment/admin confirmation, fulfilment, delivery, and cancellation are not the same step.</p>
+          <p className="text-taupe text-xs mt-1">Auction winner payments confirm automatically. Use this page for fulfilment, delivery, and cancellation tracking.</p>
         </div>
       </div>
 

@@ -10,7 +10,6 @@ const FILTERS = [
   { label: 'All',         value: 'ALL' },
   { label: 'Live Now',    value: 'ACTIVE' },
   { label: 'Coming Soon', value: 'PENDING' },
-  { label: 'Ended',       value: 'CLOSED' },
   { label: 'Sold',        value: 'SOLD' },
 ]
 
@@ -20,6 +19,13 @@ const SORT_OPTIONS = [
   { label: 'Highest Offer',   value: 'highestBid' },
   { label: 'Lowest Ticket',   value: 'lowestTicket' },
 ]
+
+const ALL_STATUS_ORDER = {
+  ACTIVE: 0,
+  PENDING: 1,
+  SOLD: 2,
+  CLOSED: 3,
+}
 
 function StatsBar({ auctions }) {
   const live    = auctions.filter(a => a.status === 'ACTIVE').length
@@ -87,6 +93,9 @@ export default function AuctionsPage() {
         sorted.sort((a, b) => Number(a.ticketPrice || 0) - Number(b.ticketPrice || 0))
         break
       default: // newest — rely on server order (already newest first)
+        if (filter === 'ALL') {
+          sorted.sort((a, b) => (ALL_STATUS_ORDER[a.status] ?? 99) - (ALL_STATUS_ORDER[b.status] ?? 99))
+        }
         break
     }
     return sorted

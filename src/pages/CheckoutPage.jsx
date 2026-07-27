@@ -790,6 +790,8 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState('new')
   const [addressInitialized, setAddressInitialized] = useState(false)
   const [creditInput, setCreditInput] = useState(null)
+  const [auctionPaymentMethod, setAuctionPaymentMethod] = useState('card')
+  const [card, setCard]             = useState({ name: '', number: '', expiry: '', cvv: '' })
   const [error, setError]           = useState(null)
   const [success, setSuccess]       = useState(false)
   const [completedAt, setCompletedAt] = useState(null)
@@ -868,10 +870,15 @@ export default function CheckoutPage() {
   const basePrice = type === 'buynow'
     ? Number(product.buyNowPrice)
     : Number(auction?.currentHighestBid || 0)
-  const credit    = creditInput === null
+  const credit    = type === 'buynow' && creditInput === null
     ? Math.min(walletBal, basePrice)
-    : Math.min(Math.max(Number(creditInput) || 0, 0), walletBal, basePrice)
-  const totalDue  = Math.max(basePrice - credit, 0)
+    : type === 'buynow'
+    ? Math.min(Math.max(Number(creditInput) || 0, 0), walletBal, basePrice)
+    : 0
+  const auctionWalletPayment = type === 'auction' && auctionPaymentMethod === 'wallet'
+  const totalDue  = type === 'auction'
+    ? (auctionWalletPayment ? 0 : basePrice)
+    : Math.max(basePrice - credit, 0)
 
   const onAddressChange = e => {
     const value = e.target.name === 'shippingPhone'
@@ -886,6 +893,20 @@ export default function CheckoutPage() {
     setSelectedAddressId(id)
     const saved = savedAddresses.find(a => String(a.id) === id)
     setAddress(saved ? toCheckoutAddress(saved) : EMPTY_ADDRESS)
+  }
+
+  const onCardChange = e => setCard(c => ({ ...c, [e.target.name]: e.target.value }))
+
+  const onCardNumberChange = e => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 16)
+    const formatted = digits.replace(/(.{4})/g, '$1 ').trim()
+    setCard(c => ({ ...c, number: formatted }))
+  }
+
+  const onCardExpiryChange = e => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 4)
+    const formatted = digits.length > 2 ? digits.slice(0, 2) + '/' + digits.slice(2) : digits
+    setCard(c => ({ ...c, expiry: formatted }))
   }
 
   const phoneValid = /^\d{10}$/.test(address.shippingPhone)
@@ -924,11 +945,15 @@ export default function CheckoutPage() {
           address,
         })).unwrap()
       } else {
+        if (auctionWalletPayment && walletBal < basePrice) {
+          setError('Insufficient wallet balance. Please pay by card or top up your wallet.')
+          return
+        }
         await dispatch(checkoutAuctionWin({
           auctionId: auction.id,
-          creditToApply: credit,
-          paymentMethod: totalDue > 0 ? 'CARD' : 'WALLET',
-          cardAmount: totalDue,
+          creditToApply: 0,
+          paymentMethod: auctionWalletPayment ? 'WALLET' : 'CARD',
+          cardAmount: auctionWalletPayment ? 0 : basePrice,
           address,
         })).unwrap()
       }
@@ -1060,7 +1085,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {walletBal > 0 && (
+                {type === 'buynow' && walletBal > 0 && (
                   <div className="bg-white border border-taupe/15 rounded-xl p-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-charcoal font-semibold">Wallet Credit</h3>
@@ -1095,6 +1120,44 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
+                {type === 'auction' && (
+                  <div className="bg-white border border-taupe/15 rounded-xl p-5 space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-charcoal font-semibold">Payment Method</h3>
+                      <span className="text-gold text-xs font-semibold">Winning bid: AED {basePrice.toLocaleString()}</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => walletBal >= basePrice && setAuctionPaymentMethod('wallet')}
+                        disabled={walletBal < basePrice}
+                        className={`text-left rounded-xl border p-4 transition-colors ${
+                          auctionPaymentMethod === 'wallet'
+                            ? 'border-emerald bg-emerald/5'
+                            : 'border-taupe/20 hover:border-gold/40'
+                        } ${walletBal < basePrice ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <p className="text-charcoal text-sm font-semibold">Wallet Balance</p>
+                        <p className="text-taupe text-xs mt-1">Available: AED {walletBal.toLocaleString()}</p>
+                        {walletBal < basePrice && <p className="text-burgundy text-xs mt-2">Not enough balance</p>}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAuctionPaymentMethod('card')}
+                        className={`text-left rounded-xl border p-4 transition-colors ${
+                          auctionPaymentMethod === 'card'
+                            ? 'border-emerald bg-emerald/5'
+                            : 'border-taupe/20 hover:border-gold/40'
+                        }`}
+                      >
+                        <p className="text-charcoal text-sm font-semibold">Credit / Debit Card</p>
+                        <p className="text-taupe text-xs mt-1">Pay securely by Visa or Mastercard</p>
+                      </button>
+                    </div>
+                    <p className="text-taupe text-xs">Reward Credits cannot be used for final winning item payments.</p>
+                  </div>
+                )}
+
                 {totalDue > 0 && (
                   <div className="bg-white border-2 border-emerald rounded-xl p-5">
                     <div className="flex items-center gap-3">
@@ -1116,6 +1179,45 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
+
+                    <div className="space-y-4 pt-4 border-t border-taupe/10">
+                      <div>
+                        <label className="block text-taupe text-xs font-medium mb-1.5">Name on Card<span className="text-gold ml-0.5">*</span></label>
+                        <input
+                          name="name" value={card.name} onChange={onCardChange} required
+                          placeholder="As it appears on your card"
+                          className="w-full bg-white border border-taupe/20 text-charcoal placeholder-taupe/30 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/20 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-taupe text-xs font-medium mb-1.5">Card Number<span className="text-gold ml-0.5">*</span></label>
+                        <input
+                          name="number" value={card.number} onChange={onCardNumberChange} required
+                          placeholder="0000 0000 0000 0000" maxLength={19}
+                          className="w-full bg-white border border-taupe/20 text-charcoal placeholder-taupe/30 rounded-xl px-4 py-3.5 text-sm font-mono focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/20 transition-all"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-taupe text-xs font-medium mb-1.5">Expiry Date<span className="text-gold ml-0.5">*</span></label>
+                          <input
+                            name="expiry" value={card.expiry} onChange={onCardExpiryChange} required
+                            placeholder="MM/YY" maxLength={5}
+                            className="w-full bg-white border border-taupe/20 text-charcoal placeholder-taupe/30 rounded-xl px-4 py-3.5 text-sm font-mono focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/20 transition-all"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-taupe text-xs font-medium mb-1.5">CVV<span className="text-gold ml-0.5">*</span></label>
+                          <input
+                            name="cvv" value={card.cvv}
+                            onChange={e => setCard(c => ({ ...c, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+                            required placeholder="•••" maxLength={4}
+                            className="w-full bg-white border border-taupe/20 text-charcoal placeholder-taupe/30 rounded-xl px-4 py-3.5 text-sm font-mono focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/20 transition-all"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-taupe text-xs">Your card details are processed securely.</p>
+                    </div>
                   </div>
                 )}
 
@@ -1126,23 +1228,28 @@ export default function CheckoutPage() {
                       <span className="text-taupe">{type === 'buynow' ? 'Buy Now Price' : 'Winning Bid'}</span>
                       <span className="text-charcoal font-medium">AED {basePrice.toLocaleString()}</span>
                     </div>
-                    {credit > 0 && (
+                    {type === 'buynow' && credit > 0 && (
                       <div className="flex justify-between text-emerald">
                         <span>Wallet Credit</span>
                         <span>− AED {credit.toLocaleString()}</span>
                       </div>
                     )}
                     <div className="border-t border-taupe/15 pt-3 flex justify-between font-bold">
-                      <span className="text-charcoal text-base">Total Due</span>
-                      <span className="text-gold text-xl">AED {totalDue.toLocaleString()}</span>
+                      <span className="text-charcoal text-base">{type === 'auction' ? 'Amount to Pay' : 'Total Due'}</span>
+                      <span className="text-gold text-xl">AED {(type === 'auction' ? basePrice : totalDue).toLocaleString()}</span>
                     </div>
                   </div>
-                  {totalDue > 0 && (
+                  {type === 'buynow' && totalDue > 0 && (
                     <p className="text-emerald text-xs mt-4 bg-emerald/5 border border-emerald/20 rounded-lg px-4 py-3">
                       AED {credit.toLocaleString()} from wallet + AED {totalDue.toLocaleString()} by card.
                     </p>
                   )}
-                  {totalDue === 0 && (
+                  {type === 'auction' && auctionWalletPayment && (
+                    <p className="text-emerald text-xs mt-4 bg-emerald/5 border border-emerald/20 rounded-lg px-4 py-3">
+                      AED {basePrice.toLocaleString()} will be debited from your wallet after confirmation.
+                    </p>
+                  )}
+                  {type === 'buynow' && totalDue === 0 && (
                     <p className="text-emerald text-xs mt-4 bg-emerald/5 border border-emerald/20 rounded-lg px-4 py-3">
                       ✓ Fully covered by your wallet credit. No additional payment required.
                     </p>
@@ -1166,7 +1273,9 @@ export default function CheckoutPage() {
                       Processing…
                     </span>
                   ) : (
-                    totalDue > 0
+                    type === 'auction' && auctionWalletPayment
+                      ? `Pay by Wallet — AED ${basePrice.toLocaleString()}`
+                      : totalDue > 0
                       ? `Pay by Card — AED ${totalDue.toLocaleString()}`
                       : 'Confirm Order — Wallet Payment'
                   )}

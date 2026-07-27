@@ -1,4 +1,4 @@
-const WHATSAPP_NUMBER = '97150123456'
+const WHATSAPP_NUMBER = '971555800246'
 const WHATSAPP_MESSAGE = "Hi Big Auction! I'd love to hear about your latest luxury auctions and exclusive deals."
 
 export default function WhatsAppButton() {

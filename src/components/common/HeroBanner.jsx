@@ -75,8 +75,8 @@ const TRUST = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
       </svg>
     ),
-    line1: 'Insured',
-    line2: 'UAE delivery',
+    line1: 'Reach',
+    line2: 'UAE and GCC delivery',
   },
 ]
 
@@ -128,13 +128,13 @@ export default function HeroBanner() {
             </div>
 
             {/* Trust assurances */}
-            <div className={`mt-9 inline-flex max-w-[700px] flex-wrap items-stretch rounded-md border px-3 py-2.5 shadow-[0_18px_45px_rgba(47,36,20,0.14)] backdrop-blur-md ${dark ? 'bg-[#f7f1e7]/12 border-gold/30' : 'bg-white/70 border-gold/25'}`}>
+            <div className={`mt-9 grid max-w-[760px] grid-cols-2 items-stretch rounded-md border px-3 py-2.5 shadow-[0_18px_45px_rgba(47,36,20,0.14)] backdrop-blur-md sm:grid-cols-4 ${dark ? 'bg-[#f7f1e7]/12 border-gold/30' : 'bg-white/70 border-gold/25'}`}>
               {TRUST.map(t => (
-                <div key={t.line1} className={`relative flex min-w-[136px] flex-1 items-center gap-2.5 px-2.5 py-1.5 after:absolute after:right-0 after:top-2 after:bottom-2 after:w-px after:bg-gold/25 last:after:hidden`}>
+                <div key={t.line1} className={`relative flex min-w-0 items-center gap-2.5 px-2.5 py-1.5 after:absolute after:right-0 after:top-2 after:bottom-2 after:w-px after:bg-gold/25 last:after:hidden`}>
                   <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gold/10 ring-1 ring-gold/25 [&_svg]:h-4 [&_svg]:w-4">{t.icon}</div>
                   <div className="min-w-0 text-left">
                     <p className={`text-[10px] font-bold leading-none uppercase tracking-[0.08em] ${dark ? 'text-ivory' : 'text-charcoal'}`}>{t.line1}</p>
-                    <p className={`mt-1 text-[9px] leading-tight ${dark ? 'text-ivory/70' : 'text-taupe'}`}>{t.line2}</p>
+                    <p className={`mt-1 whitespace-nowrap text-[9px] leading-tight ${dark ? 'text-ivory/70' : 'text-taupe'}`}>{t.line2}</p>
                   </div>
                 </div>
               ))}

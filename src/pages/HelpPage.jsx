@@ -189,11 +189,11 @@ const FAQS = [
       },
       {
         q: 'What happens after I win?',
-        a: 'After winning, you must complete payment within the deadline shown on the platform or communicated by BigAuction.ae. The item will only be released for delivery after payment is completed and confirmed.',
+        a: 'After winning, go to checkout, choose card or wallet payment, and complete the winning bid payment. Once payment succeeds, your order is confirmed and ready for delivery fulfilment.',
       },
       {
         q: 'When is the winning bid charged?',
-        a: 'The winning bid amount is payable after the auction ends and you are confirmed as the winner. You will be prompted to complete payment through the available payment methods.',
+        a: 'The winning bid amount is payable after the auction ends and you are the winner. You can complete payment directly through the available checkout methods.',
       },
       {
         q: 'What happens if I win but do not pay?',
@@ -515,7 +515,7 @@ export default function HelpPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
             <a
-              href="mailto:hello@bigauction.ae"
+              href="mailto:info@bigauction.ae"
               className="flex items-center gap-2 bg-gold-gradient text-almost-black font-bold px-6 py-3 rounded text-sm hover:opacity-90 transition-opacity uppercase tracking-wide"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
@@ -524,7 +524,7 @@ export default function HelpPage() {
               Email Us
             </a>
             <a
-              href="https://wa.me/97150123456"
+              href="https://wa.me/971555800246"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 border border-ivory/20 text-ivory font-semibold px-6 py-3 rounded text-sm hover:border-ivory/40 hover:bg-white/5 transition-colors uppercase tracking-wide"

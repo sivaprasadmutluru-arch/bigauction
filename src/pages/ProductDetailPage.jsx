@@ -9,6 +9,7 @@ import {
   setupAutoBid, getAutoBid, disableAutoBid,
 } from '../features/auctions/auctionsSlice'
 import { fetchWallet } from '../features/wallet/walletSlice'
+import api from '../services/api'
 import useWebSocket from '../hooks/useWebSocket'
 import Loader from '../components/common/Loader'
 
@@ -788,12 +789,23 @@ function LiveAuctionPanel({ auction, bids, product }) {
   }, [autoBidConfig])
 
   const walletBal     = wallet ? Number(wallet.balance) : 0
-  const currentBid    = bids.length > 0 ? Number(bids[0].amount) : Number(auction.currentHighestBid || 0)
+  const currentBid    = Number(auction.currentHighestBid || 0)
   const liveBidderName = bids.length > 0 ? bids[0].bidderName : auction.highestBidderName
   const liveBidTime   = bids.length > 0 ? bids[0].createdAt  : null
   const bidIncrement  = auction.bidIncrement ? Number(auction.bidIncrement) : 100
   const minNextBid    = currentBid + bidIncrement
   const maxBidAmount  = auction.maxBidAmount ? Number(auction.maxBidAmount) : null
+  const userDisplayNames = [user?.nickname, user?.name, user?.email].filter(Boolean)
+  const currentUserTotal = user
+    ? bids.reduce((total, bid) => {
+        const sameUser = bid.bidderId
+          ? bid.bidderId === user.id
+          : userDisplayNames.includes(bid.bidderName)
+        return sameUser ? Math.max(total, Number(bid.bidderTotalAmount ?? bid.amount ?? 0)) : total
+      }, 0)
+    : 0
+  const userRemainingBid = maxBidAmount ? Math.max(maxBidAmount - currentUserTotal, 0) : null
+  const hasReachedMaxBid = !!(maxBidAmount && currentBid >= maxBidAmount)
   const ticketsSold   = auction.ticketsSold  || 0
   const ticketTarget  = auction.ticketTarget || 0
   const ticketPct     = ticketTarget > 0 ? Math.min((ticketsSold / ticketTarget) * 100, 100) : 0
@@ -849,7 +861,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
   const isActive  = auction.status === 'ACTIVE'
   const isSold    = auction.status === 'SOLD'
   const isClosed  = auction.status === 'CLOSED'
-  const isEnded   = isSold || isClosed
+  const isEnded   = isSold || isClosed || hasReachedMaxBid
   const isWinner  = user && auction.winnerId === user.id
   const buyNowAvail = !!(buyNowPrice && auction.buyNowAvailable && !isActive && !isEnded)
   const onBuyNow    = () => {
@@ -899,11 +911,9 @@ function LiveAuctionPanel({ auction, bids, product }) {
     navigate('/checkout', { state: { type: 'auction', product, auction } })
   }
 
-  const quickMultipliers = [
-    { label: '+AED ' + (bidIncrement * 1).toLocaleString(), val: currentBid + bidIncrement * 1 },
-    { label: '+AED ' + (bidIncrement * 2).toLocaleString(), val: currentBid + bidIncrement * 2 },
-    { label: '+AED ' + (bidIncrement * 5).toLocaleString(), val: currentBid + bidIncrement * 5 },
-  ]
+  const quickMultipliers = [100, 200, 500]
+    .filter(amount => !userRemainingBid || amount <= userRemainingBid)
+    .map(amount => ({ label: '+AED ' + amount.toLocaleString(), val: amount }))
 
   const leaderboardVisible = showLeaderboard ? leaderboard : leaderboard.slice(0, 5)
 
@@ -1050,13 +1060,13 @@ function LiveAuctionPanel({ auction, bids, product }) {
       {isEnded && !isWinner && (
         <div className="bg-taupe/5 border border-taupe/15 rounded-xl px-5 py-4 mb-3">
           <p className="text-taupe text-sm">
-            {isSold ? 'This auction has ended.' : 'This auction closed without a winner.'}
+            {hasReachedMaxBid || isSold ? 'This auction has ended.' : 'This auction closed without a winner.'}
           </p>
         </div>
       )}
 
       {/* Bidding area — only when active */}
-      {isActive && (
+      {isActive && !hasReachedMaxBid && (
         <div className="border border-taupe/15 rounded-xl overflow-hidden mb-4">
 
           {/* Sign in prompt */}
@@ -1117,12 +1127,12 @@ function LiveAuctionPanel({ auction, bids, product }) {
                   {/* Info row */}
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
-                      <p className="text-taupe text-[9px] font-semibold uppercase tracking-wider leading-tight">Next Valid Offer</p>
-                      <p className="text-charcoal text-xs font-bold mt-0.5">AED {minNextBid.toLocaleString()}</p>
+                      <p className="text-taupe text-[9px] font-semibold uppercase tracking-wider leading-tight">Your Total</p>
+                      <p className="text-charcoal text-xs font-bold mt-0.5">AED {currentUserTotal.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-taupe text-[9px] font-semibold uppercase tracking-wider leading-tight">Increment</p>
-                      <p className="text-charcoal text-xs font-bold mt-0.5">AED {bidIncrement.toLocaleString()}</p>
+                      <p className="text-taupe text-[9px] font-semibold uppercase tracking-wider leading-tight">Remaining Limit</p>
+                      <p className="text-charcoal text-xs font-bold mt-0.5">{userRemainingBid !== null ? `AED ${userRemainingBid.toLocaleString()}` : '—'}</p>
                     </div>
                     <div>
                       <p className="text-taupe text-[9px] font-semibold uppercase tracking-wider leading-tight">Max Bid Amount</p>
@@ -1137,7 +1147,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
                         key={val}
                         type="button"
                         onClick={() => setBidAmount(String(val))}
-                        disabled={loading}
+                        disabled={loading || (userRemainingBid !== null && userRemainingBid <= 0)}
                         className={`py-2.5 rounded-lg text-xs font-semibold border transition-all disabled:opacity-50 ${
                           Number(bidAmount) === val
                             ? 'bg-emerald text-ivory border-emerald'
@@ -1151,14 +1161,15 @@ function LiveAuctionPanel({ auction, bids, product }) {
 
                   {/* Custom input */}
                   <div>
-                    <p className="text-taupe text-[10px] mb-1.5">Custom amount (must follow AED {bidIncrement.toLocaleString()} increments)</p>
+                    <p className="text-taupe text-[10px] mb-1.5">Custom amount (added to your total bid)</p>
                     <div className="flex gap-2 items-center">
                       <input
                         type="number"
                         value={bidAmount}
                         onChange={e => setBidAmount(e.target.value)}
                         placeholder="Enter amount"
-                        min={minNextBid}
+                        min={1}
+                        max={userRemainingBid ?? undefined}
                         className="flex-1 bg-white border border-taupe/25 text-charcoal placeholder-taupe/40 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-emerald transition-colors"
                       />
                       <span className="text-taupe text-sm font-medium flex-shrink-0">AED</span>
@@ -1169,7 +1180,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
                   <form onSubmit={onBid}>
                     <button
                       type="submit"
-                      disabled={loading || !bidAmount}
+                      disabled={loading || !bidAmount || (userRemainingBid !== null && (userRemainingBid <= 0 || Number(bidAmount) > userRemainingBid))}
                       className="w-full bg-emerald text-ivory font-bold py-3.5 rounded-xl hover:bg-emerald/90 disabled:opacity-50 transition-colors btn-shimmer uppercase tracking-wider text-sm"
                     >
                       {loading ? 'Processing…' : 'Place Offer'}
@@ -1185,14 +1196,18 @@ function LiveAuctionPanel({ auction, bids, product }) {
               {/* MANUAL BID tab */}
               {activeTab === 'manual' && (
                 <div className="p-4 space-y-4">
-                  <p className="text-taupe text-xs">Enter a specific offer amount manually. Must be at least AED {minNextBid.toLocaleString()}.</p>
+                  <p className="text-taupe text-xs">
+                    Enter any offer amount. It will be added to your current total and cannot exceed your remaining limit
+                    {userRemainingBid !== null ? ` of AED ${userRemainingBid.toLocaleString()}` : ''}.
+                  </p>
                   <div className="flex gap-2 items-center">
                     <input
                       type="number"
                       value={bidAmount}
                       onChange={e => setBidAmount(e.target.value)}
-                      placeholder={`Min AED ${minNextBid.toLocaleString()}`}
-                      min={minNextBid}
+                      placeholder="Enter amount"
+                      min={1}
+                      max={userRemainingBid ?? undefined}
                       className="flex-1 bg-white border border-taupe/25 text-charcoal placeholder-taupe/40 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-emerald transition-colors"
                     />
                     <span className="text-taupe text-sm font-medium flex-shrink-0">AED</span>
@@ -1200,7 +1215,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
                   <form onSubmit={onBid}>
                     <button
                       type="submit"
-                      disabled={loading || !bidAmount}
+                      disabled={loading || !bidAmount || (userRemainingBid !== null && (userRemainingBid <= 0 || Number(bidAmount) > userRemainingBid))}
                       className="w-full bg-emerald text-ivory font-bold py-3.5 rounded-xl hover:bg-emerald/90 disabled:opacity-50 transition-colors btn-shimmer uppercase tracking-wider text-sm"
                     >
                       {loading ? 'Processing…' : 'Place Offer'}
@@ -1239,7 +1254,7 @@ function LiveAuctionPanel({ auction, bids, product }) {
       )}
 
       {/* AUTO BID section */}
-      {isActive && user && userHasTicket && (
+      {isActive && !hasReachedMaxBid && user && userHasTicket && (
         <div className="border border-taupe/15 rounded-xl overflow-hidden mb-4">
 
           {/* Header */}
@@ -1390,7 +1405,6 @@ function LiveAuctionPanel({ auction, bids, product }) {
         <div className="border border-taupe/15 rounded-xl overflow-hidden mb-4">
           <div className="px-4 py-3 border-b border-taupe/10 bg-taupe/5 flex items-center justify-between">
             <p className="text-charcoal text-xs font-bold uppercase tracking-widest">Live Leaderboard</p>
-            <span className="text-taupe text-[10px]">{leaderboard.length} bidder{leaderboard.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -1854,6 +1868,22 @@ function AuctionCompletedPanel({ auction, bids, product }) {
   const finalOffer = Number(auction.currentHighestBid || 0)
   const ticketPrice = Number(auction.ticketPrice || 0)
 
+  const [myOrder, setMyOrder] = useState(null)
+  const [orderChecked, setOrderChecked] = useState(false)
+  useEffect(() => {
+    if (!user || !isWinner || !isSold) { setOrderChecked(true); return }
+    let cancelled = false
+    api.get('/orders')
+      .then(res => {
+        if (cancelled) return
+        const orders = res.data || []
+        setMyOrder(orders.find(o => o.auctionId === auction.id && o.type === 'AUCTION_WIN') || null)
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setOrderChecked(true) })
+    return () => { cancelled = true }
+  }, [user, isWinner, isSold, auction.id])
+
   const leaderboard = useMemo(() => {
     if (!bids || bids.length === 0) return []
     const map = {}
@@ -1973,10 +2003,55 @@ function AuctionCompletedPanel({ auction, bids, product }) {
       )}
 
       {/* Winner congratulations */}
-      {user && isWinner && isSold && (
-        <div className="border border-emerald/30 bg-emerald/5 rounded-xl p-4 space-y-1">
-          <p className="text-emerald font-semibold text-sm">🎉 Congratulations, you won!</p>
-          <p className="text-taupe text-xs">Our team will contact you to complete payment and delivery arrangements.</p>
+      {user && isWinner && isSold && orderChecked && (
+        <div className="border border-emerald/30 bg-emerald/5 rounded-xl p-4 space-y-3">
+          {myOrder?.status === 'DELIVERED' ? (
+            <div className="space-y-1">
+              <p className="text-emerald font-semibold text-sm">📦 Delivered</p>
+              <p className="text-taupe text-xs">Your order has been delivered. Enjoy your item!</p>
+              <button
+                onClick={() => navigate('/orders')}
+                className="text-emerald text-xs font-semibold underline hover:no-underline mt-1"
+              >
+                View My Orders →
+              </button>
+            </div>
+          ) : myOrder?.status === 'CANCELLED' ? (
+            <div className="space-y-1">
+              <p className="text-burgundy font-semibold text-sm">Order cancelled</p>
+              <p className="text-taupe text-xs">This order was cancelled and the amount paid has been refunded to your wallet.</p>
+              <button
+                onClick={() => navigate('/orders')}
+                className="text-emerald text-xs font-semibold underline hover:no-underline mt-1"
+              >
+                View My Orders →
+              </button>
+            </div>
+          ) : myOrder ? (
+            <div className="space-y-1">
+              <p className="text-emerald font-semibold text-sm">✓ Payment completed</p>
+              <p className="text-taupe text-xs">Your order has been confirmed.</p>
+              <button
+                onClick={() => navigate('/orders')}
+                className="text-emerald text-xs font-semibold underline hover:no-underline mt-1"
+              >
+                View My Orders →
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1">
+                <p className="text-emerald font-semibold text-sm">Congratulations, you won!</p>
+                <p className="text-taupe text-xs">Complete checkout to pay the winning amount and confirm delivery details.</p>
+              </div>
+              <button
+                onClick={() => navigate('/checkout', { state: { type: 'auction', product, auction } })}
+                className="w-full bg-emerald text-ivory font-bold py-3.5 rounded-xl hover:bg-emerald/90 transition-colors btn-shimmer"
+              >
+                Proceed to Checkout
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -2058,7 +2133,7 @@ function AuctionCompletedPanel({ auction, bids, product }) {
           <span className="text-lg leading-none mt-0.5">{isSold ? '📦' : '💳'}</span>
           <p className="text-charcoal text-xs flex-1">
             {isSold
-              ? 'The winner will be contacted by our team to complete payment and delivery arrangements.'
+              ? 'The winner can complete checkout immediately. After payment, the confirmed order is ready for fulfilment.'
               : 'Ticket prices have been refunded as Reward Credits to all participants.'}
           </p>
         </div>
@@ -2320,9 +2395,12 @@ export default function ProductDetailPage() {
     ...(product.images || []).map(image => typeof image === 'string' ? image : image?.imageUrl || image?.url),
   ].filter(Boolean))).map(imageUrl => ({ imageUrl }))
   const hasAuction = !!auction
-  const isActive   = auction?.status === 'ACTIVE'
+  const auctionCurrentBid = Number(auction?.currentHighestBid || 0)
+  const auctionMaxBid = auction?.maxBidAmount ? Number(auction.maxBidAmount) : null
+  const auctionMaxReached = !!(auctionMaxBid && auctionCurrentBid >= auctionMaxBid)
+  const isActive   = auction?.status === 'ACTIVE' && !auctionMaxReached
   const isPending  = auction?.status === 'PENDING'
-  const isSold     = auction?.status === 'SOLD'
+  const isSold     = auction?.status === 'SOLD' || auctionMaxReached
   const isClosed   = auction?.status === 'CLOSED'
 
   const inclusions = [

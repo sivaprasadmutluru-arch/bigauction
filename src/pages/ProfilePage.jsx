@@ -590,10 +590,10 @@ export default function ProfilePage() {
                 {user?.name || 'Member'}
               </h1>
 
-              {/* Last name + Account Status */}
+              {/* Nickname + Account Status */}
               <div className="grid grid-cols-2 gap-x-3 sm:gap-x-10 lg:gap-x-20 mb-2.5 sm:mb-3 lg:mb-4">
                 <div>
-                  <FieldLabel>Last Name</FieldLabel>
+                  <FieldLabel>Nickname</FieldLabel>
                   <p className="text-ivory text-[12px] sm:text-[14px] lg:text-[15px] font-semibold">
                     {user?.nickname || user?.name?.split(' ')[0] || 'Member'}
                   </p>
@@ -616,7 +616,7 @@ export default function ProfilePage() {
                   <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium px-2 sm:px-2.5 py-0.5 rounded-full leading-none flex-shrink-0"
                         style={{ border: '1px solid rgba(255,255,255,0.28)', color: 'rgba(242,231,213,0.7)' }}>
                     <span className="hidden sm:inline-flex"><IconShield /></span>
-                    {user?.emailVerified ? 'Verified' : 'Not verified'}
+                    {user?.emailVerified ? 'Verified' : 'Not Verified'}
                   </span>
                 </div>
               </div>
@@ -630,7 +630,7 @@ export default function ProfilePage() {
                     <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium px-2 sm:px-2.5 py-0.5 rounded-full leading-none flex-shrink-0"
                           style={{ border: '1px solid rgba(255,255,255,0.28)', color: 'rgba(242,231,213,0.7)' }}>
                       <span className="hidden sm:inline-flex"><IconShield /></span>
-                      {user?.phoneVerified ? 'Verified' : 'Not verified'}
+                      {user?.phoneVerified ? 'Verified' : 'Not Verified'}
                     </span>
                   )}
                 </div>
@@ -720,7 +720,7 @@ export default function ProfilePage() {
                   AED {rewardCredits.toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                 </p>
                 <p className="text-[10px] sm:text-[11px] lg:text-[12px] mt-1.5 sm:mt-2 lg:mt-3" style={{ color: 'rgba(242,231,213,0.38)' }}>
-                  Tickets only · cannot be withdrawn or transferred
+                  For future auction tickets only
                 </p>
               </div>
             </div>
@@ -732,11 +732,10 @@ export default function ProfilePage() {
         {/* ══════════════════════════════════════════════════════════════
             QUICK NAV
         ══════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {[
             { icon: <IconGavel />,    label: 'My Auctions',  sub: 'Ticketed auctions',            href: '#my-auctions' },
             { icon: <IconClipboard />,label: 'My Requests',  sub: 'Delivery, refunds & wishlist',  href: '#my-requests' },
-            { icon: <IconBag />,      label: 'My Purchases', sub: 'Buy Now purchases',             to: '/orders'        },
             { icon: <IconHeart />,    label: 'Favourites',   sub: 'Saved auctions',                to: '/favourites'   },
             { icon: <IconDocument />, label: 'Statements',   sub: 'Wallet & credits',              to: '/wallet'       },
           ].map(({ icon, label, sub, to, href }) => {
@@ -984,10 +983,19 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl" style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
             <DashboardBanner eyebrow="My Dashboard" title="Statements" />
             <div className="px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-7 lg:pt-8 pb-5 sm:pb-6 lg:pb-8">
-              <p className="text-taupe text-[12px] lg:text-[13px] mb-4 sm:mb-5 lg:mb-7">Wallet + Reward Credits</p>
+              <div className="space-y-3 mb-4 sm:mb-5 lg:mb-7">
+                <div className="rounded-xl px-4 py-3" style={{ background: '#F9F6F1', border: '1px solid rgba(138,129,118,0.12)' }}>
+                  <p className="text-charcoal text-[13px] font-semibold">Wallet Statement</p>
+                  <p className="text-taupe text-[11px] mt-0.5">Cash, refund, payment, and adjustment movements.</p>
+                </div>
+                <div className="rounded-xl px-4 py-3" style={{ background: '#F9F6F1', border: '1px solid rgba(138,129,118,0.12)' }}>
+                  <p className="text-charcoal text-[13px] font-semibold">Reward Credits Statement</p>
+                  <p className="text-taupe text-[11px] mt-0.5">Credits earned, used, expired, or adjusted.</p>
+                </div>
+              </div>
               <Link to="/wallet" className="btn-shimmer inline-flex items-center text-almost-black text-[12px] sm:text-[13px] font-bold px-4 lg:px-5 py-2 sm:py-2.5 rounded-lg"
                 style={{ background: 'linear-gradient(135deg, #D4B87A 0%, #C6A972 50%, #B8955A 100%)' }}>
-                View Statement
+                View Statements
               </Link>
             </div>
           </div>
@@ -999,6 +1007,31 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(138,129,118,0.12)' }}>
           <DashboardBanner eyebrow="My Dashboard" title="Account Settings" />
           <div>
+            <button onClick={() => { setEditMode(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-7 lg:px-9 xl:px-10 py-4 hover:bg-[#F9F6F1] transition-colors text-left">
+              <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-taupe/70"
+                    style={{ background: '#F2E7D5', border: '1px solid rgba(138,129,118,0.18)' }}>
+                <IconPencil />
+              </span>
+              <span className="flex-1 text-charcoal text-[13px] sm:text-[14px] font-semibold">Edit Profile</span>
+              <span className="text-taupe/35 flex-shrink-0"><IconChevronRight /></span>
+            </button>
+            <div style={{ borderTop: '1px solid rgba(138,129,118,0.1)' }} />
+            <button
+              className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-7 lg:px-9 xl:px-10 py-4 hover:bg-[#F9F6F1] transition-colors text-left">
+              <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-taupe/70"
+                    style={{ background: '#F2E7D5', border: '1px solid rgba(138,129,118,0.18)' }}>
+                <IconShield />
+              </span>
+              <span className="flex-1">
+                <span className="block text-charcoal text-[13px] sm:text-[14px] font-semibold">Verification</span>
+                <span className="block text-taupe text-[11px] mt-0.5">
+                  Email: {user?.emailVerified ? 'Verified' : 'Not Verified'} · Mobile: {user?.phoneVerified ? 'Verified' : 'Not Verified'}
+                </span>
+              </span>
+              <span className="text-taupe/35 flex-shrink-0"><IconChevronRight /></span>
+            </button>
+            <div style={{ borderTop: '1px solid rgba(138,129,118,0.1)' }} />
             <button onClick={() => { setShowAddresses(v => !v); setTimeout(() => document.getElementById('addresses-anchor')?.scrollIntoView({ behavior: 'smooth' }), 50) }}
               className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-7 lg:px-9 xl:px-10 py-4 hover:bg-[#F9F6F1] transition-colors text-left">
               <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-taupe/70"
@@ -1016,6 +1049,32 @@ export default function ProfilePage() {
                 <IconLock />
               </span>
               <span className="flex-1 text-charcoal text-[13px] sm:text-[14px] font-semibold">Change Password</span>
+              <span className="text-taupe/35 flex-shrink-0"><IconChevronRight /></span>
+            </button>
+            <div style={{ borderTop: '1px solid rgba(138,129,118,0.1)' }} />
+            <button
+              className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-7 lg:px-9 xl:px-10 py-4 hover:bg-[#F9F6F1] transition-colors text-left">
+              <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-taupe/70"
+                    style={{ background: '#F2E7D5', border: '1px solid rgba(138,129,118,0.18)' }}>
+                <IconClipboard />
+              </span>
+              <span className="flex-1">
+                <span className="block text-charcoal text-[13px] sm:text-[14px] font-semibold">Notifications</span>
+                <span className="block text-taupe text-[11px] mt-0.5">Email, SMS, WhatsApp, and app preferences</span>
+              </span>
+              <span className="text-taupe/35 flex-shrink-0"><IconChevronRight /></span>
+            </button>
+            <div style={{ borderTop: '1px solid rgba(138,129,118,0.1)' }} />
+            <button
+              className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-7 lg:px-9 xl:px-10 py-4 hover:bg-[#F9F6F1] transition-colors text-left">
+              <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-taupe/70"
+                    style={{ background: '#F2E7D5', border: '1px solid rgba(138,129,118,0.18)' }}>
+                <IconDocument />
+              </span>
+              <span className="flex-1">
+                <span className="block text-charcoal text-[13px] sm:text-[14px] font-semibold">Language</span>
+                <span className="block text-taupe text-[11px] mt-0.5">English / Arabic preference</span>
+              </span>
               <span className="text-taupe/35 flex-shrink-0"><IconChevronRight /></span>
             </button>
             <div style={{ borderTop: '1px solid rgba(138,129,118,0.1)' }} />
