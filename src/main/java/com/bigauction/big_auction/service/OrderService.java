@@ -17,6 +17,8 @@ import java.util.List;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final WalletService walletService;
+    private final BroadcastService broadcastService;
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersForUser(Long userId) {
@@ -34,8 +36,20 @@ public class OrderService {
     public OrderResponse updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Order not found"));
+
+        OrderStatus previousStatus = order.getStatus();
         order.setStatus(newStatus);
         orderRepository.save(order);
+
+        if (newStatus != previousStatus) {
+            // Guard against double refund if admin cancels the same order more than once
+            if (newStatus == OrderStatus.CANCELLED && previousStatus != OrderStatus.CANCELLED) {
+                walletService.refundCancelledOrder(order.getUser().getId(), order.getTotalAmount(), order.getId());
+            }
+            broadcastService.broadcastOrderStatusChanged(
+                    order.getUser().getId(), order.getId(), order.getProduct().getName(), newStatus);
+        }
+
         return toResponse(order);
     }
 
@@ -45,6 +59,8 @@ public class OrderService {
                 .userId(order.getUser().getId())
                 .userName(order.getUser().getName())
                 .userEmail(order.getUser().getEmail())
+                .productId(order.getProduct().getId())
+                .auctionId(order.getAuction() != null ? order.getAuction().getId() : null)
                 .productName(order.getProduct().getName())
                 .productBrand(order.getProduct().getBrand())
                 .type(order.getType())
@@ -57,6 +73,7 @@ public class OrderService {
                 .shippingCity(order.getShippingCity())
                 .shippingCountry(order.getShippingCountry())
                 .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
                 .build();
     }
 }

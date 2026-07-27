@@ -12,9 +12,7 @@ import com.bigauction.big_auction.entity.Auction;
 import com.bigauction.big_auction.entity.CreditConfig;
 import com.bigauction.big_auction.entity.DepositRequest;
 import com.bigauction.big_auction.enums.AuctionStatus;
-import com.bigauction.big_auction.enums.DepositStatus;
 import com.bigauction.big_auction.enums.OrderStatus;
-import com.bigauction.big_auction.exception.AppException;
 import com.bigauction.big_auction.repository.AutoBidConfigRepository;
 import com.bigauction.big_auction.repository.DepositRequestRepository;
 import com.bigauction.big_auction.repository.TicketRepository;
@@ -23,17 +21,14 @@ import com.bigauction.big_auction.service.AuctionService;
 import com.bigauction.big_auction.service.OrderService;
 import com.bigauction.big_auction.service.ReportService;
 import com.bigauction.big_auction.service.UserService;
-import com.bigauction.big_auction.service.WalletService;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -53,7 +48,6 @@ public class AdminController {
     private final AutoBidConfigRepository autoBidConfigRepository;
     private final ReportService reportService;
     private final UserService userService;
-    private final WalletService walletService;
     private final DepositRequestRepository depositRequestRepository;
 
     // ---- Credit Config ----
@@ -177,46 +171,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok("Deposit requests fetched", list));
     }
 
-    @PostMapping("/deposit-requests/{id}/approve")
-    @Transactional
-    public ResponseEntity<ApiResponse<DepositRequestResponse>> approveDeposit(
-            @PathVariable Long id,
-            @RequestBody(required = false) DepositActionRequest request) {
-
-        DepositRequest deposit = depositRequestRepository.findById(id)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Deposit request not found"));
-        if (deposit.getStatus() != DepositStatus.PENDING) {
-            throw new AppException(HttpStatus.BAD_REQUEST, "Deposit is not pending");
-        }
-
-        deposit.setStatus(DepositStatus.APPROVED);
-        deposit.setAdminNote(request != null ? request.getNote() : null);
-        depositRequestRepository.save(deposit);
-
-        walletService.approveDeposit(deposit.getUser().getId(), deposit.getAmount(), deposit.getId());
-
-        return ResponseEntity.ok(ApiResponse.ok("Deposit approved and wallet credited", toDepositResponse(deposit)));
-    }
-
-    @PostMapping("/deposit-requests/{id}/reject")
-    @Transactional
-    public ResponseEntity<ApiResponse<DepositRequestResponse>> rejectDeposit(
-            @PathVariable Long id,
-            @RequestBody(required = false) DepositActionRequest request) {
-
-        DepositRequest deposit = depositRequestRepository.findById(id)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Deposit request not found"));
-        if (deposit.getStatus() != DepositStatus.PENDING) {
-            throw new AppException(HttpStatus.BAD_REQUEST, "Deposit is not pending");
-        }
-
-        deposit.setStatus(DepositStatus.REJECTED);
-        deposit.setAdminNote(request != null ? request.getNote() : null);
-        depositRequestRepository.save(deposit);
-
-        return ResponseEntity.ok(ApiResponse.ok("Deposit rejected", toDepositResponse(deposit)));
-    }
-
     private DepositRequestResponse toDepositResponse(DepositRequest d) {
         return DepositRequestResponse.builder()
                 .id(d.getId())
@@ -247,9 +201,4 @@ public class AdminController {
         private OrderStatus status;
     }
 
-    @Getter
-    @Setter
-    static class DepositActionRequest {
-        private String note;
-    }
 }

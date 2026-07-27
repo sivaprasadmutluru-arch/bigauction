@@ -11,8 +11,11 @@ import java.time.LocalDateTime;
 public class BidResponse {
     private Long id;
     private Long auctionId;
+    private Long bidderId;
     private String bidderName;
     private BigDecimal amount;
+    private BigDecimal offerAmount;
+    private BigDecimal bidderTotalAmount;
     private String currency;
     private LocalDateTime createdAt;
     private boolean autoBid;

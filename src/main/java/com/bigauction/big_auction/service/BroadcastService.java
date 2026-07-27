@@ -3,6 +3,7 @@ package com.bigauction.big_auction.service;
 import com.bigauction.big_auction.dto.response.AuctionResponse;
 import com.bigauction.big_auction.dto.response.BidResponse;
 import com.bigauction.big_auction.dto.response.UserNotification;
+import com.bigauction.big_auction.enums.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -90,6 +91,23 @@ public class BroadcastService {
                 .currency(currency)
                 .message("The auction for " + productName + " has ended with no winner. "
                         + "Your ticket credit has been returned to your wallet.")
+                .build();
+        messagingTemplate.convertAndSend("/topic/users/" + userId + "/notifications", notification);
+    }
+
+    /** Notify a customer that their order's fulfilment status changed (admin action). */
+    public void broadcastOrderStatusChanged(Long userId, Long orderId, String productName, OrderStatus status) {
+        String message = switch (status) {
+            case DELIVERED -> "Your order for " + productName + " has been delivered.";
+            case CANCELLED -> "Your order for " + productName + " was cancelled. The amount paid has been refunded to your wallet.";
+            case CONFIRMED -> "Your order for " + productName + " is confirmed.";
+            case PENDING   -> "Your order for " + productName + " is now pending.";
+        };
+        UserNotification notification = UserNotification.builder()
+                .type("ORDER_STATUS")
+                .orderId(orderId)
+                .productName(productName)
+                .message(message)
                 .build();
         messagingTemplate.convertAndSend("/topic/users/" + userId + "/notifications", notification);
     }

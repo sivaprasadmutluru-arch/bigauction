@@ -4,6 +4,7 @@ import com.bigauction.big_auction.dto.response.OrderResponse;
 import com.bigauction.big_auction.entity.Auction;
 import com.bigauction.big_auction.entity.Order;
 import com.bigauction.big_auction.enums.AuctionStatus;
+import com.bigauction.big_auction.enums.OrderStatus;
 import com.bigauction.big_auction.enums.OrderType;
 import com.bigauction.big_auction.exception.AppException;
 import com.bigauction.big_auction.repository.OrderRepository;
@@ -20,6 +21,7 @@ public class AuctionCheckoutService {
 
     private final AuctionService auctionService;
     private final OrderRepository orderRepository;
+    private final WalletService walletService;
 
     /**
      * Called by the auction winner to complete their purchase.
@@ -27,6 +29,7 @@ public class AuctionCheckoutService {
      */
     @Transactional
     public OrderResponse checkout(Long auctionId, Long userId, BigDecimal creditToApply,
+                                  String paymentMethod, BigDecimal cardAmount,
                                   String shippingName, String shippingPhone,
                                   String shippingAddress, String shippingCity, String shippingCountry) {
         Auction auction = auctionService.findById(auctionId);
@@ -50,12 +53,27 @@ public class AuctionCheckoutService {
         }
 
         BigDecimal totalAmount = winningBid;
+        String method = paymentMethod == null ? "" : paymentMethod.trim().toUpperCase();
+
+        if ("WALLET".equals(method)) {
+            walletService.debitForAuctionWin(userId, totalAmount, auctionId);
+        } else if ("CARD".equals(method)) {
+            BigDecimal paidByCard = cardAmount == null ? BigDecimal.ZERO : cardAmount;
+            if (paidByCard.compareTo(totalAmount) != 0) {
+                throw new AppException(HttpStatus.BAD_REQUEST,
+                        "Card payment amount must match the winning bid amount.");
+            }
+        } else {
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    "Please choose a valid payment method: CARD or WALLET.");
+        }
 
         Order order = Order.builder()
                 .user(auction.getWinner())
                 .product(auction.getProduct())
                 .auction(auction)
                 .type(OrderType.AUCTION_WIN)
+                .status(OrderStatus.CONFIRMED)
                 .totalAmount(totalAmount)
                 .creditApplied(BigDecimal.ZERO)
                 .shippingName(shippingName)

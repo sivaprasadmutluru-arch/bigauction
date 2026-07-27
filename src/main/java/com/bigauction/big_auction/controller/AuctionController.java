@@ -92,6 +92,8 @@ public class AuctionController {
 
         Long userId = securityUtil.getCurrentUserId(userDetails);
         BigDecimal credit      = request != null ? request.getCreditToApply()  : BigDecimal.ZERO;
+        String paymentMethod   = request != null ? request.getPaymentMethod()  : null;
+        BigDecimal cardAmount  = request != null ? request.getCardAmount()     : BigDecimal.ZERO;
         String shippingName    = request != null ? request.getShippingName()    : null;
         String shippingPhone   = request != null ? request.getShippingPhone()   : null;
         String shippingAddress = request != null ? request.getShippingAddress() : null;
@@ -99,6 +101,7 @@ public class AuctionController {
         String shippingCountry = request != null ? request.getShippingCountry() : null;
         return ResponseEntity.ok(ApiResponse.ok("Checkout successful",
                 auctionCheckoutService.checkout(id, userId, credit,
+                        paymentMethod, cardAmount,
                         shippingName, shippingPhone, shippingAddress, shippingCity, shippingCountry)));
     }
 
@@ -106,6 +109,8 @@ public class AuctionController {
     @Setter
     static class CheckoutRequest {
         private BigDecimal creditToApply;
+        private String paymentMethod;
+        private BigDecimal cardAmount;
         private String shippingName;
         private String shippingPhone;
         private String shippingAddress;

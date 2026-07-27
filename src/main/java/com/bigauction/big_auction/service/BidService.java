@@ -43,30 +43,30 @@ public class BidService {
         if (!ticketService.hasTicket(auctionId, userId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "You must purchase a ticket before bidding");
         }
-        BigDecimal nextAllowedBid = getNextAllowedBid(auction);
 
-        if (request.getAmount().compareTo(nextAllowedBid) < 0) {
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new AppException(HttpStatus.BAD_REQUEST,
-                    "Next offer must be at least " + currency + " " + nextAllowedBid.toPlainString());
-        }
-
-        BigDecimal increment = getBidIncrement(auction);
-        BigDecimal amountAboveCurrent = request.getAmount().subtract(auction.getCurrentHighestBid());
-        if (amountAboveCurrent.remainder(increment).compareTo(BigDecimal.ZERO) != 0) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    "Offer must follow " + currency + " " + increment.toPlainString() + " increments");
-        }
-        if (auction.getMaxBidAmount() != null
-                && request.getAmount().compareTo(auction.getMaxBidAmount()) > 0) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    "Bid exceeds the maximum allowed amount of " + currency + " " + auction.getMaxBidAmount().toPlainString());
+                    "Offer amount must be greater than zero");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
 
+        BigDecimal userTotalBefore = getUserTotalBid(auctionId, userId);
+        BigDecimal userTotalAfter = userTotalBefore.add(request.getAmount());
+
+        if (auction.getMaxBidAmount() != null
+                && userTotalAfter.compareTo(auction.getMaxBidAmount()) > 0) {
+            BigDecimal remaining = auction.getMaxBidAmount().subtract(userTotalBefore).max(BigDecimal.ZERO);
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    "Offer exceeds your remaining limit of " + currency + " " + remaining.toPlainString());
+        }
+
         // Capture previous highest bidder before overwriting — needed for outbid notification
         User previousHighestBidder = auction.getHighestBidder();
+        boolean becomesHighest = userTotalAfter.compareTo(auction.getCurrentHighestBid()) > 0
+                || previousHighestBidder == null
+                || previousHighestBidder.getId().equals(userId);
 
         Bid bid = Bid.builder()
                 .auction(auction)
@@ -75,26 +75,40 @@ public class BidService {
                 .build();
         bidRepository.save(bid);
 
-        auction.setCurrentHighestBid(request.getAmount());
-        auction.setHighestBidder(user);
+        if (becomesHighest) {
+            auction.setCurrentHighestBid(userTotalAfter);
+            auction.setHighestBidder(user);
+        }
         auction.setBidCount(auction.getBidCount() + 1);
 
-        // Anti-sniping: extend end time if bid lands in the last 60 seconds (+90s)
-        auctionService.extendEndTimeIfNecessary(auction);
-
-        BidResponse response = toResponse(bid, currency);
+        BidResponse response = toResponse(bid, currency, userTotalAfter);
         // Push the new bid to all subscribers watching this auction in real-time
         broadcastService.broadcastNewBid(auctionId, response);
 
         // Notify the previous highest bidder that they have been outbid
-        if (previousHighestBidder != null && !previousHighestBidder.getId().equals(userId)) {
+        if (becomesHighest && previousHighestBidder != null && !previousHighestBidder.getId().equals(userId)) {
             String productName = auction.getProduct() != null ? auction.getProduct().getName() : "the auction";
             broadcastService.broadcastOutbid(
-                    previousHighestBidder.getId(), auctionId, productName, request.getAmount(), currency);
+                    previousHighestBidder.getId(), auctionId, productName, userTotalAfter, currency);
+
+            if (hasReachedMaxBid(auction)) {
+                auctionService.finalizeAsSold(auction, user);
+                return response;
+            }
 
             // Trigger auto bid cascade for the outbid user
             resolveAutoBidChain(auction, previousHighestBidder);
+        } else if (hasReachedMaxBid(auction)) {
+            auctionService.finalizeAsSold(auction, user);
+            return response;
         }
+
+        if (auction.getStatus() != AuctionStatus.ACTIVE) {
+            return response;
+        }
+
+        // Anti-sniping: extend end time if bid lands in the last 60 seconds (+90s)
+        auctionService.extendEndTimeIfNecessary(auction);
 
         return response;
     }
@@ -118,9 +132,11 @@ public class BidService {
             if (configOpt.isEmpty()) break;
 
             AutoBidConfig config = configOpt.get();
-            BigDecimal nextBidAmount = auction.getCurrentHighestBid().add(config.getIncrement());
+            BigDecimal userTotalBefore = getUserTotalBid(auction.getId(), currentOutbidUser.getId());
+            BigDecimal nextBidAmount = config.getIncrement();
+            BigDecimal userTotalAfter = userTotalBefore.add(nextBidAmount);
 
-            if (nextBidAmount.compareTo(config.getMaxLimit()) > 0) {
+            if (userTotalAfter.compareTo(config.getMaxLimit()) > 0) {
                 // Max limit reached — notify user and stop the chain
                 broadcastService.broadcastAutoBidMaxReached(
                         currentOutbidUser.getId(), auction.getId(), productName, config.getMaxLimit(), currency);
@@ -128,7 +144,7 @@ public class BidService {
             }
 
             // Also respect the auction's global max bid cap if set
-            if (auction.getMaxBidAmount() != null && nextBidAmount.compareTo(auction.getMaxBidAmount()) > 0) {
+            if (auction.getMaxBidAmount() != null && userTotalAfter.compareTo(auction.getMaxBidAmount()) > 0) {
                 break;
             }
 
@@ -143,21 +159,36 @@ public class BidService {
                     .build();
             bidRepository.save(autoBid);
 
-            auction.setCurrentHighestBid(nextBidAmount);
-            auction.setHighestBidder(autoBidUser);
+            if (userTotalAfter.compareTo(auction.getCurrentHighestBid()) > 0) {
+                auction.setCurrentHighestBid(userTotalAfter);
+                auction.setHighestBidder(autoBidUser);
+            }
             auction.setBidCount(auction.getBidCount() + 1);
 
             auctionService.extendEndTimeIfNecessary(auction);
-            broadcastService.broadcastNewBid(auction.getId(), toResponse(autoBid, currency));
+            broadcastService.broadcastNewBid(auction.getId(), toResponse(autoBid, currency, userTotalAfter));
 
-            if (previousHighest != null && !previousHighest.getId().equals(autoBidUser.getId())) {
+            if (auction.getHighestBidder() != null
+                    && auction.getHighestBidder().getId().equals(autoBidUser.getId())
+                    && previousHighest != null
+                    && !previousHighest.getId().equals(autoBidUser.getId())) {
                 broadcastService.broadcastOutbid(
-                        previousHighest.getId(), auction.getId(), productName, nextBidAmount, currency);
+                        previousHighest.getId(), auction.getId(), productName, userTotalAfter, currency);
+            }
+
+            if (hasReachedMaxBid(auction)) {
+                auctionService.finalizeAsSold(auction, autoBidUser);
+                break;
             }
 
             // The user who was just outbid by this auto bid is now the candidate for the next round
             currentOutbidUser = previousHighest;
         }
+    }
+
+    private boolean hasReachedMaxBid(Auction auction) {
+        return auction.getMaxBidAmount() != null
+                && auction.getCurrentHighestBid().compareTo(auction.getMaxBidAmount()) >= 0;
     }
 
     BigDecimal getNextAllowedBid(Auction auction) {
@@ -174,9 +205,9 @@ public class BidService {
     public List<BidResponse> getBidsForAuction(Long auctionId) {
         Auction auction = auctionService.findById(auctionId);
         String currency = auction.getCurrency();
-        return bidRepository.findByAuctionIdOrderByAmountDesc(auctionId)
+        return bidRepository.findByAuctionIdOrderByCreatedAtDesc(auctionId)
                 .stream()
-                .map(b -> toResponse(b, currency))
+                .map(b -> toResponse(b, currency, getUserTotalBid(b.getAuction().getId(), b.getUser().getId())))
                 .toList();
     }
 
@@ -187,9 +218,10 @@ public class BidService {
                 .stream()
                 .map(bid -> {
                     Auction auction = bid.getAuction();
+                    BigDecimal userTotal = getUserTotalBid(auction.getId(), userId);
                     boolean isWinning = auction.getHighestBidder() != null
                             && auction.getHighestBidder().getId().equals(userId)
-                            && bid.getAmount().compareTo(auction.getCurrentHighestBid()) == 0;
+                            && userTotal.compareTo(auction.getCurrentHighestBid()) == 0;
 
                     List<String> imageUrls = auction.getProduct() != null
                             ? auction.getProduct().getImages().stream()
@@ -216,12 +248,20 @@ public class BidService {
                 .toList();
     }
 
-    private BidResponse toResponse(Bid bid, String currency) {
+    private BigDecimal getUserTotalBid(Long auctionId, Long userId) {
+        BigDecimal total = bidRepository.sumAmountByAuctionIdAndUserId(auctionId, userId);
+        return total != null ? total : BigDecimal.ZERO;
+    }
+
+    private BidResponse toResponse(Bid bid, String currency, BigDecimal bidderTotalAmount) {
         return BidResponse.builder()
                 .id(bid.getId())
                 .auctionId(bid.getAuction().getId())
+                .bidderId(bid.getUser().getId())
                 .bidderName(bid.getUser().getNickname() != null ? bid.getUser().getNickname() : bid.getUser().getName())
-                .amount(bid.getAmount())
+                .amount(bidderTotalAmount)
+                .offerAmount(bid.getAmount())
+                .bidderTotalAmount(bidderTotalAmount)
                 .currency(currency)
                 .createdAt(bid.getCreatedAt())
                 .autoBid(bid.isAutoBid())

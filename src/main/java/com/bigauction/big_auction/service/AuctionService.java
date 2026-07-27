@@ -202,6 +202,21 @@ public class AuctionService {
     }
 
     /**
+     * Backstop for auctions that already reached their maximum bid amount.
+     * New bids finalize immediately in BidService; this covers older data or missed realtime transitions.
+     */
+    @Scheduled(fixedDelay = 30_000)
+    @Transactional
+    public void autoFinalizeMaxBidAuctions() {
+        auctionRepository.findByStatus(AuctionStatus.ACTIVE).forEach(auction -> {
+            if (auction.getMaxBidAmount() == null || auction.getHighestBidder() == null) return;
+            if (auction.getCurrentHighestBid().compareTo(auction.getMaxBidAmount()) >= 0) {
+                finalizeAsSold(auction, auction.getHighestBidder());
+            }
+        });
+    }
+
+    /**
      * If a bid lands within the last 60 seconds, extend by 90 seconds (anti-sniping).
      * Broadcasts the updated status to all WebSocket subscribers so countdowns update in real time.
      */

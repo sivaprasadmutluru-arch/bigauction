@@ -7,5 +7,6 @@ public enum TransactionReason {
     BUY_NOW_PURCHASE,      // Credit used during a Buy Now purchase
     AUCTION_WIN_PURCHASE,  // Credit used during an auction win checkout
     ADMIN_ADJUSTMENT,      // Manual credit adjustment by admin
-    WALLET_DEPOSIT         // User-initiated deposit approved by admin
+    WALLET_DEPOSIT,        // User-initiated wallet top-up
+    ORDER_CANCEL_REFUND    // Order total refunded to wallet after admin cancellation
 }

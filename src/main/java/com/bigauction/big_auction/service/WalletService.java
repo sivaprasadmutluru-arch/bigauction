@@ -171,6 +171,28 @@ public class WalletService {
     }
 
     @Transactional
+    public void debitForAuctionWin(Long userId, BigDecimal winningBid, Long auctionId) {
+        Wallet wallet = getWalletByUserId(userId);
+        if (wallet.getBalance().compareTo(winningBid) < 0) {
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    "Insufficient wallet balance. Please pay by card or top up your wallet to complete this auction win.");
+        }
+
+        wallet.setBalance(wallet.getBalance().subtract(winningBid));
+        walletRepository.save(wallet);
+
+        WalletTransaction tx = WalletTransaction.builder()
+                .wallet(wallet)
+                .type(TransactionType.DEBIT)
+                .reason(TransactionReason.AUCTION_WIN_PURCHASE)
+                .amount(winningBid)
+                .auctionId(auctionId)
+                .note("Winning bid payment for auction #" + auctionId)
+                .build();
+        transactionRepository.save(tx);
+    }
+
+    @Transactional
     public BigDecimal debitForTicketUsingRewardCredits(Long userId, BigDecimal ticketPrice,
                                                        BigDecimal requestedCredit, Long auctionId) {
         Wallet wallet = getWalletByUserId(userId);
@@ -217,7 +239,14 @@ public class WalletService {
     @Transactional
     public void approveDeposit(Long userId, BigDecimal amount, Long depositId) {
         creditWallet(userId, amount, TransactionReason.WALLET_DEPOSIT,
-                "Deposit #" + depositId + " approved", null, null);
+                "Wallet top-up #" + depositId + " credited", null, null);
+    }
+
+    @Transactional
+    public void refundCancelledOrder(Long userId, BigDecimal amount, Long orderId) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) return;
+        creditWallet(userId, amount, TransactionReason.ORDER_CANCEL_REFUND,
+                "Refund for cancelled order #" + orderId, null, null);
     }
 
     /**

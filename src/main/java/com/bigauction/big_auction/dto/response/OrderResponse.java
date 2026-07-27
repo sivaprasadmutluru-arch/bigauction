@@ -15,6 +15,8 @@ public class OrderResponse {
     private Long userId;
     private String userName;
     private String userEmail;
+    private Long productId;
+    private Long auctionId;
     private String productName;
     private String productBrand;
     private OrderType type;
@@ -27,4 +29,5 @@ public class OrderResponse {
     private String shippingCity;
     private String shippingCountry;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

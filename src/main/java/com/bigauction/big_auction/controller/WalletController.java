@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -46,6 +47,7 @@ public class WalletController {
 
     /** User submits a deposit request (bank transfer reference). */
     @PostMapping("/deposit-request")
+    @Transactional
     public ResponseEntity<ApiResponse<DepositRequestResponse>> submitDeposit(
             @RequestBody DepositSubmitRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -59,11 +61,14 @@ public class WalletController {
                 .amount(request.getAmount())
                 .bankReference(request.getBankReference())
                 .userNote(request.getUserNote())
-                .status(DepositStatus.PENDING)
+                .status(DepositStatus.APPROVED)
+                .adminNote("Auto-approved wallet top-up")
                 .build();
 
         depositRequestRepository.save(deposit);
-        return ResponseEntity.ok(ApiResponse.ok("Deposit request submitted", toResponse(deposit)));
+        walletService.approveDeposit(userId, deposit.getAmount(), deposit.getId());
+
+        return ResponseEntity.ok(ApiResponse.ok("Wallet credited successfully", toResponse(deposit)));
     }
 
     /** User views their own deposit requests. */
