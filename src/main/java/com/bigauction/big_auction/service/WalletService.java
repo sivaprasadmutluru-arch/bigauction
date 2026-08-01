@@ -53,8 +53,7 @@ public class WalletService {
 
     /**
      * Issues consolation reward credits to all non-winning ticket holders after a SOLD auction.
-     * The credit amount is creditPercentage% of the ticket price (configured by admin).
-     * If no CreditConfig exists, nothing is issued.
+     * The credit amount is 3% of the ticket price.
      */
     @Transactional
     public void distributeCreditsToLosers(Auction auction, Long winnerId) {
@@ -77,39 +76,46 @@ public class WalletService {
                 });
     }
 
-    /** Awards configured bonus credit to every ticket holder when an auction is cancelled after starting. */
+    /** Refunds tickets to wallet and awards a 5% reward bonus when Instant Buy cancels the auction. */
     @Transactional
-    public void distributeInstantBuyBonuses(Auction auction, Long buyerId) {
-        CreditConfig config = creditConfigRepository.findAll().stream().findFirst().orElse(null);
-        BigDecimal credit = auction.getTicketPrice()
-                .multiply(BigDecimal.valueOf(5))
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        LocalDateTime expiresAt = config != null && config.isExpiryEnabled() && config.getExpiryDays() != null
-                ? LocalDateTime.now().plusDays(config.getExpiryDays())
-                : null;
-
+    public void refundTicketsAndDistributeInstantBuyBonuses(Auction auction, Long buyerId) {
         ticketRepository.findByAuctionIdAndUserIdNot(auction.getId(), buyerId).stream()
                 .map(ticket -> ticket.getUser().getId())
                 .distinct()
-                .forEach(userId -> creditRewardWallet(userId, credit,
-                        "5% Instant Buy cancellation credit for auction #" + auction.getId(), auction.getId(), expiresAt));
+                .forEach(userId -> {
+                    creditWallet(
+                            userId,
+                            auction.getTicketPrice(),
+                            TransactionReason.TICKET_REFUND,
+                            "Ticket refund for Instant Buy cancellation of auction #" + auction.getId(),
+                            auction.getId(), null);
+                    creditRewardWallet(userId, percentageOfTicketPrice(auction, BigDecimal.valueOf(5)),
+                            "5% Instant Buy cancellation reward for auction #" + auction.getId(),
+                            auction.getId(), rewardExpiresAt());
+                });
     }
 
     /**
      * Returns the full ticket price to the withdrawable wallet balance when an auction
-     * does not start or closes with no winner.
+     * does not start or closes with no winner, then adds the cancellation reward to
+     * reward credits for future ticket purchases.
      */
     @Transactional
-    public void refundTicketsAsCredits(Auction auction) {
+    public void refundTicketsAndDistributeCancellationRewards(Auction auction) {
         ticketRepository.findByAuctionId(auction.getId()).stream()
                 .map(ticket -> ticket.getUser().getId())
                 .distinct()
-                .forEach(userId -> creditWallet(
-                        userId,
-                        auction.getTicketPrice(),
-                        TransactionReason.TICKET_REFUND,
-                        "Ticket refund for auction #" + auction.getId(),
-                        auction.getId(), null));
+                .forEach(userId -> {
+                    creditWallet(
+                            userId,
+                            auction.getTicketPrice(),
+                            TransactionReason.TICKET_REFUND,
+                            "Ticket refund for cancelled auction #" + auction.getId(),
+                            auction.getId(), null);
+                    creditRewardWallet(userId, percentageOfTicketPrice(auction, BigDecimal.valueOf(5)),
+                            "5% cancelled auction reward for auction #" + auction.getId(),
+                            auction.getId(), rewardExpiresAt());
+                });
     }
 
     /**
@@ -278,6 +284,7 @@ public class WalletService {
 
     /** Credits non-withdrawable reward credits (AUCTION_LOSS_CREDIT). Tracked in rewardCredits, not balance. */
     private void creditRewardWallet(Long userId, BigDecimal amount, String note, Long auctionId, LocalDateTime expiresAt) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) return;
         Wallet wallet = getWalletByUserId(userId);
         wallet.setRewardCredits(wallet.getRewardCredits().add(amount));
         walletRepository.save(wallet);
@@ -296,6 +303,7 @@ public class WalletService {
 
     private void creditWallet(Long userId, BigDecimal amount, TransactionReason reason,
                                String note, Long auctionId, LocalDateTime expiresAt) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) return;
         Wallet wallet = getWalletByUserId(userId);
         wallet.setBalance(wallet.getBalance().add(amount));
         walletRepository.save(wallet);
@@ -317,9 +325,17 @@ public class WalletService {
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Wallet not found for user"));
     }
 
-    private CreditConfig getActiveCreditConfig() {
-        return creditConfigRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Credit configuration not set. Please contact admin."));
+    private BigDecimal percentageOfTicketPrice(Auction auction, BigDecimal percentage) {
+        return auction.getTicketPrice()
+                .multiply(percentage)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
+    private LocalDateTime rewardExpiresAt() {
+        CreditConfig config = creditConfigRepository.findAll().stream().findFirst().orElse(null);
+        return config != null && config.isExpiryEnabled() && config.getExpiryDays() != null
+                ? LocalDateTime.now().plusDays(config.getExpiryDays())
+                : null;
     }
 
     private WalletTransactionResponse toTransactionResponse(WalletTransaction tx) {

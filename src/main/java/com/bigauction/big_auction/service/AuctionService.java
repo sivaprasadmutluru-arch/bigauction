@@ -151,7 +151,7 @@ public class AuctionService {
         Product product = productService.findById(auction.getProduct().getId());
         product.setSold(true);
 
-        if (instantBuy) walletService.distributeInstantBuyBonuses(auction, winner.getId());
+        if (instantBuy) walletService.refundTicketsAndDistributeInstantBuyBonuses(auction, winner.getId());
         else walletService.distributeCreditsToLosers(auction, winner.getId());
         broadcastService.broadcastAuctionStatus(auction.getId(), toResponse(auction));
 
@@ -267,7 +267,7 @@ public class AuctionService {
         auction.setStatus(AuctionStatus.CLOSED);
         auction.setEndTime(LocalDateTime.now());
         auctionRepository.save(auction);
-        walletService.refundTicketsAsCredits(auction);
+        walletService.refundTicketsAndDistributeCancellationRewards(auction);
         broadcastService.broadcastAuctionStatus(auction.getId(), toResponse(auction));
 
         // Notify every ticket holder that the auction closed with no winner
